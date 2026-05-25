@@ -65,7 +65,7 @@ export default function CartSummary({ totales, itemCount }: Props) {
         <ArrowRight size={18} />
       </button>
 
-      <p className="text-center text-gray-400 text-xs mt-3">
+      <p className="text-center text-gray-500 text-xs mt-3">
         🔒 Pago seguro y protegido
       </p>
     </div>

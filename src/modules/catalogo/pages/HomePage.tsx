@@ -58,7 +58,7 @@ export default function HomePage() {
               <br />
               <span className="text-yellow-300">Conquista</span>
             </h1>
-            <p className="text-orange-100 text-lg mb-8 max-w-lg">
+            <p className="text-white/90 text-lg mb-8 max-w-lg">
               Hamburguesas jugosas, pizzas artesanales y más. Preparados con los mejores ingredientes
               para darte la mejor experiencia.
             </p>
@@ -104,7 +104,7 @@ export default function HomePage() {
                   {stat.icon}
                   <span className="font-black text-lg">{stat.value}</span>
                 </div>
-                <span className="text-orange-200 text-xs">{stat.label}</span>
+                <span className="text-white/70 text-xs">{stat.label}</span>
               </div>
             ))}
           </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
       <section className="bg-gradient-to-r from-orange-500 to-red-500 text-white mt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
           <h2 className="text-3xl font-extrabold mb-3">¿Listo para ordenar?</h2>
-          <p className="text-orange-100 mb-8 max-w-md mx-auto">
+          <p className="text-white/90 mb-8 max-w-md mx-auto">
             Más de 8 opciones esperándote. Rápido, delicioso y a domicilio.
           </p>
           <Link

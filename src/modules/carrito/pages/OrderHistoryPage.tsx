@@ -84,11 +84,11 @@ export default function OrderHistoryPage() {
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
                       <p className="font-extrabold text-gray-900">#{pedido.numeroPedido}</p>
-                      <p className="text-gray-400 text-xs mt-0.5 flex items-center gap-1">
+                      <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">
                         <Clock size={11} />
                         {formatFecha(pedido.fecha)}
                       </p>
-                      <p className="text-gray-400 text-xs mt-0.5">{pedido.restaurante}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{pedido.restaurante}</p>
                     </div>
                     <OrderStatusBadge estado={pedido.estado} />
                   </div>
@@ -110,7 +110,7 @@ export default function OrderHistoryPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-500">
                       {totalProductos} {totalProductos === 1 ? 'producto' : 'productos'}
                       {pedido.metodoPago.tipo === 'tarjeta' && pedido.metodoPago.ultimosDigitos && (
                         <span className="ml-2">· Visa •••• {pedido.metodoPago.ultimosDigitos}</span>
@@ -121,12 +121,12 @@ export default function OrderHistoryPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-xs text-gray-400">Total</p>
+                        <p className="text-xs text-gray-500">Total</p>
                         <p className="font-extrabold text-orange-500 text-lg">
                           ${pedido.totales.total.toFixed(2)}
                         </p>
                       </div>
-                      <ChevronRight size={16} className="text-gray-300" />
+                      <ChevronRight size={16} className="text-gray-400" />
                     </div>
                   </div>
                 </div>

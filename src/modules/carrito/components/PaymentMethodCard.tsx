@@ -32,11 +32,11 @@ export default function PaymentMethodCard({ metodo, seleccionado, onSelect }: Pr
           {metodo.alias}
         </p>
         {isCard && metodo.ultimosDigitos ? (
-          <p className="text-gray-400 text-xs mt-0.5">
+          <p className="text-gray-500 text-xs mt-0.5">
             {metodo.banco} · terminada en {metodo.ultimosDigitos}
           </p>
         ) : (
-          <p className="text-gray-400 text-xs mt-0.5">Paga en efectivo al recibir tu pedido</p>
+          <p className="text-gray-500 text-xs mt-0.5">Paga en efectivo al recibir tu pedido</p>
         )}
       </div>
 

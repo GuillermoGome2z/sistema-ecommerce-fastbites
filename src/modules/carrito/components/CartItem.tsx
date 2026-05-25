@@ -27,7 +27,7 @@ export default function CartItemCard({ item, onIncrement, onDecrement, onDelete 
           </div>
           <button
             onClick={onDelete}
-            className="text-gray-300 hover:text-red-400 transition-colors p-1 flex-shrink-0 rounded-lg hover:bg-red-50"
+            className="text-gray-400 hover:text-red-400 transition-colors p-1 flex-shrink-0 rounded-lg hover:bg-red-50"
             aria-label="Eliminar producto"
           >
             <Trash2 size={15} />

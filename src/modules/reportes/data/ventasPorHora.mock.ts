@@ -1,0 +1,35 @@
+import type { VentaPorHora } from '../types/reportes.types';
+
+export const VENTAS_POR_HORA_MOCK: VentaPorHora[] = [
+  { Fecha: '2025-05-05', Hora:  7, Restaurante: 'FastBites Central', TotalPedidos:  4, TotalVentas:  480.00 },
+  { Fecha: '2025-05-05', Hora:  8, Restaurante: 'FastBites Central', TotalPedidos:  7, TotalVentas:  840.00 },
+  { Fecha: '2025-05-05', Hora:  9, Restaurante: 'FastBites Central', TotalPedidos:  6, TotalVentas:  720.00 },
+  { Fecha: '2025-05-05', Hora: 10, Restaurante: 'FastBites Central', TotalPedidos:  5, TotalVentas:  600.00 },
+  { Fecha: '2025-05-05', Hora: 11, Restaurante: 'FastBites Central', TotalPedidos:  8, TotalVentas:  960.00 },
+  { Fecha: '2025-05-05', Hora: 12, Restaurante: 'FastBites Central', TotalPedidos: 12, TotalVentas: 1440.00 },
+  { Fecha: '2025-05-05', Hora: 13, Restaurante: 'FastBites Central', TotalPedidos: 14, TotalVentas: 1680.00 },
+  { Fecha: '2025-05-05', Hora: 14, Restaurante: 'FastBites Central', TotalPedidos: 11, TotalVentas: 1320.00 },
+  { Fecha: '2025-05-05', Hora: 15, Restaurante: 'FastBites Central', TotalPedidos:  9, TotalVentas: 1080.00 },
+  { Fecha: '2025-05-05', Hora: 16, Restaurante: 'FastBites Central', TotalPedidos:  7, TotalVentas:  840.00 },
+  { Fecha: '2025-05-05', Hora: 17, Restaurante: 'FastBites Central', TotalPedidos: 10, TotalVentas: 1200.00 },
+  { Fecha: '2025-05-05', Hora: 18, Restaurante: 'FastBites Central', TotalPedidos: 13, TotalVentas: 1560.00 },
+  { Fecha: '2025-05-05', Hora: 19, Restaurante: 'FastBites Central', TotalPedidos: 15, TotalVentas: 1800.00 },
+  { Fecha: '2025-05-05', Hora: 20, Restaurante: 'FastBites Central', TotalPedidos: 11, TotalVentas: 1320.00 },
+  { Fecha: '2025-05-05', Hora: 21, Restaurante: 'FastBites Central', TotalPedidos:  8, TotalVentas:  960.00 },
+  { Fecha: '2025-05-05', Hora: 22, Restaurante: 'FastBites Central', TotalPedidos:  5, TotalVentas:  600.00 },
+  { Fecha: '2025-05-05', Hora:  7, Restaurante: 'FastBites Norte',   TotalPedidos:  3, TotalVentas:  330.00 },
+  { Fecha: '2025-05-05', Hora:  8, Restaurante: 'FastBites Norte',   TotalPedidos:  5, TotalVentas:  550.00 },
+  { Fecha: '2025-05-05', Hora:  9, Restaurante: 'FastBites Norte',   TotalPedidos:  4, TotalVentas:  440.00 },
+  { Fecha: '2025-05-05', Hora: 12, Restaurante: 'FastBites Norte',   TotalPedidos:  8, TotalVentas:  880.00 },
+  { Fecha: '2025-05-05', Hora: 13, Restaurante: 'FastBites Norte',   TotalPedidos: 10, TotalVentas: 1100.00 },
+  { Fecha: '2025-05-05', Hora: 14, Restaurante: 'FastBites Norte',   TotalPedidos:  7, TotalVentas:  770.00 },
+  { Fecha: '2025-05-05', Hora: 19, Restaurante: 'FastBites Norte',   TotalPedidos: 11, TotalVentas: 1210.00 },
+  { Fecha: '2025-05-05', Hora: 20, Restaurante: 'FastBites Norte',   TotalPedidos:  9, TotalVentas:  990.00 },
+  { Fecha: '2025-05-05', Hora:  8, Restaurante: 'FastBites Express', TotalPedidos:  4, TotalVentas:  380.00 },
+  { Fecha: '2025-05-05', Hora: 12, Restaurante: 'FastBites Express', TotalPedidos:  6, TotalVentas:  570.00 },
+  { Fecha: '2025-05-05', Hora: 13, Restaurante: 'FastBites Express', TotalPedidos:  8, TotalVentas:  760.00 },
+  { Fecha: '2025-05-05', Hora: 19, Restaurante: 'FastBites Express', TotalPedidos:  9, TotalVentas:  855.00 },
+  { Fecha: '2025-05-05', Hora: 20, Restaurante: 'FastBites Express', TotalPedidos:  7, TotalVentas:  665.00 },
+];
+
+export const HORAS_LIST: number[] = Array.from({ length: 16 }, (_, i) => i + 7);
