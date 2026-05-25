@@ -38,7 +38,7 @@ export default function AdminOffersPage() {
     </div>,
     o.codigoPromo ? (
       <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg border border-gray-200">{o.codigoPromo}</span>
-    ) : <span className="text-gray-300 text-xs">—</span>,
+    ) : <span className="text-gray-500 text-xs">—</span>,
     <span className="text-xs text-gray-600">{o.fechaInicio} → {o.fechaFin}</span>,
     <span className="text-xs text-gray-500 font-medium">{o.usosTotal} usos</span>,
     <StatusBadge status="" active={o.activo} />,

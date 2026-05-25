@@ -113,7 +113,7 @@ export default function ProductDetailPage() {
                   <span className="text-4xl font-black text-orange-500">
                     ${producto.precioBase.toFixed(2)}
                   </span>
-                  <span className="text-gray-400 text-sm mb-1.5">precio base</span>
+                  <span className="text-gray-500 text-sm mb-1.5">precio base</span>
                 </div>
                 <button className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-lg px-6 py-4 rounded-2xl transition-all shadow-lg shadow-orange-200">
                   <ShoppingCart size={22} />

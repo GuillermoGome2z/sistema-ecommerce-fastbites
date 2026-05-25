@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
                   <img src={p.imagen} alt={p.nombre} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 text-sm truncate">{p.nombre}</p>
-                    <p className="text-gray-400 text-xs">{p.categoria}</p>
+                    <p className="text-gray-500 text-xs">{p.categoria}</p>
                   </div>
                   <p className="font-bold text-orange-500 text-sm flex-shrink-0">${p.precioBase.toFixed(2)}</p>
                 </div>

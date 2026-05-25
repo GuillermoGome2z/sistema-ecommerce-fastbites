@@ -37,11 +37,11 @@ export default function AddressCard({ direccion, seleccionada, onSelect }: Props
           )}
         </div>
         <p className="text-gray-600 text-sm leading-snug">{direccion.calle}</p>
-        <p className="text-gray-400 text-xs mt-0.5">
+        <p className="text-gray-500 text-xs mt-0.5">
           {direccion.ciudad} · CP {direccion.codigoPostal}
         </p>
         {direccion.referencias && (
-          <p className="text-gray-400 text-xs mt-0.5 italic">{direccion.referencias}</p>
+          <p className="text-gray-500 text-xs mt-0.5 italic">{direccion.referencias}</p>
         )}
       </div>
 

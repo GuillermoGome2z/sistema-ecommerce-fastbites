@@ -46,7 +46,7 @@ export default function AdminOrderDetailPage() {
           <button onClick={() => navigate('/admin/orders')} className="flex items-center gap-1.5 text-gray-500 hover:text-orange-500 text-sm font-medium transition-colors">
             <ArrowLeft size={15} /> Volver
           </button>
-          <span className="text-gray-300">·</span>
+          <span className="text-gray-400">·</span>
           <span className="text-sm text-gray-500">{new Date(order.fecha).toLocaleString('es-MX')}</span>
           <StatusBadge status={order.estado} />
         </div>

@@ -29,7 +29,7 @@ export default function ProductCard({ producto }: Props) {
         <h3 className="text-gray-900 font-bold text-lg mb-1 leading-tight">{producto.nombre}</h3>
         <p className="text-gray-500 text-sm mb-3 line-clamp-2 flex-1">{producto.descripcion}</p>
 
-        <div className="flex items-center gap-3 mb-4 text-gray-400 text-xs">
+        <div className="flex items-center gap-3 mb-4 text-gray-500 text-xs">
           <span className="flex items-center gap-1">
             <Flame size={13} className="text-orange-400" />
             {producto.calorias} cal

@@ -44,7 +44,7 @@ export default function CategoryCard({ categoria, activa, conteo, onClick }: Pro
       <span className={`font-bold text-sm ${activa ? c.textActivo : c.textInactivo}`}>
         {categoria}
       </span>
-      <span className={`text-xs ${activa ? 'text-orange-100' : 'text-gray-400'}`}>
+      <span className={`text-xs ${activa ? 'text-white/80' : 'text-gray-500'}`}>
         {conteo} productos
       </span>
     </button>

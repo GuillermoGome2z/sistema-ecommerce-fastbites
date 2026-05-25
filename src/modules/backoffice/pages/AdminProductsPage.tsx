@@ -42,7 +42,7 @@ export default function AdminProductsPage() {
           {p.nombre}
           {p.esDestacado && <Star size={12} className="text-yellow-400 fill-yellow-400" />}
         </p>
-        <p className="text-gray-400 text-xs">{p.descripcion.slice(0, 40)}...</p>
+        <p className="text-gray-500 text-xs">{p.descripcion.slice(0, 40)}...</p>
       </div>
     </div>,
     <span className="text-xs bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full font-medium">{p.categoria}</span>,

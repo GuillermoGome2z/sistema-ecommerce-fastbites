@@ -32,7 +32,7 @@ export default function AdminOrdersPage() {
     <span className="font-mono text-xs text-gray-600">{o.numeroPedido}</span>,
     <div>
       <p className="font-semibold text-gray-900 text-sm">{o.clienteNombre}</p>
-      <p className="text-gray-400 text-xs">{o.clienteEmail}</p>
+      <p className="text-gray-500 text-xs">{o.clienteEmail}</p>
     </div>,
     <span className="text-xs text-gray-600">{o.restaurante}</span>,
     <span className="text-xs text-gray-500">{new Date(o.fecha).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>,

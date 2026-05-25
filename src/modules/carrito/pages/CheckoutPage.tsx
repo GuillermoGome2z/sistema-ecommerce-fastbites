@@ -106,7 +106,7 @@ export default function CheckoutPage() {
               {step === 'carrito' && (
                 <div className="space-y-3">
                   {items.length === 0 ? (
-                    <p className="text-gray-400 text-sm text-center py-8">
+                    <p className="text-gray-500 text-sm text-center py-8">
                       Tu carrito está vacío.
                     </p>
                   ) : (
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
                               ${item.subtotal.toFixed(2)}
                             </p>
                           </div>
-                          <p className="text-gray-400 text-xs mt-0.5">x{item.cantidad}</p>
+                          <p className="text-gray-500 text-xs mt-0.5">x{item.cantidad}</p>
                           {(item.personalizacion?.tamano || item.personalizacion?.bebida) && (
                             <div className="flex gap-1 mt-1 flex-wrap">
                               {item.personalizacion?.tamano && (
@@ -224,7 +224,7 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-1.5 mt-4 text-gray-400 text-xs">
+              <div className="flex items-center justify-center gap-1.5 mt-4 text-gray-500 text-xs">
                 <ShieldCheck size={13} className="text-green-500" />
                 Transacción segura y cifrada
               </div>

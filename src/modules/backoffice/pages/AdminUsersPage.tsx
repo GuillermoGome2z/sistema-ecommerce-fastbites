@@ -35,13 +35,13 @@ export default function AdminUsersPage() {
       </div>
       <div>
         <p className="font-semibold text-gray-900 text-sm">{u.nombre}</p>
-        <p className="text-gray-400 text-xs">{u.email}</p>
+        <p className="text-gray-500 text-xs">{u.email}</p>
       </div>
     </div>,
     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROL_COLORS[u.rol] ?? 'bg-gray-100 text-gray-600'}`}>{u.rol}</span>,
     <StatusBadge status="" active={u.activo} />,
     <span className="text-xs text-gray-500">{u.ultimoAcceso ?? '—'}</span>,
-    <span className="text-xs text-gray-400">{u.fechaCreacion}</span>,
+    <span className="text-xs text-gray-500">{u.fechaCreacion}</span>,
     <div className="flex items-center gap-1">
       <ActionButton onClick={() => {}} icon={<Eye size={15} />} label="Ver usuario" />
       <ActionButton onClick={() => {}} icon={<Pencil size={15} />} label="Editar usuario" />
