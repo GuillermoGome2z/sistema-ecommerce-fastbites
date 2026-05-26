@@ -5,6 +5,23 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export interface JwtPayload {
+  usuarioId: number;
+  email: string;
+  nombreCompleto: string;
+  roles: string[];
+}
+
+export interface UsuarioRow {
+  UsuarioId: number;
+  Email: string;
+  PasswordHash: string;
+  NombreCompleto: string;
+  Activo: boolean;
+  IntentosFallidosLogin: number;
+  BloqueadoHasta: Date | null;
+}
+
 export interface Producto {
   ProductoId: number;
   Nombre: string;
