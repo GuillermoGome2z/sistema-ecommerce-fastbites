@@ -1,11 +1,16 @@
+// Hecho por mavasquez
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, ShieldAlert, KeyRound, Lock, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, KeyRound, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function VerifyPinPage() {
   const { user, tempVerification, verifyPin, resetPassword, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const [hasAlerted, setHasAlerted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Redirigir si no hay verificación en curso o si ya inició sesión
   useEffect(() => {
@@ -15,6 +20,35 @@ export default function VerifyPinPage() {
       navigate('/login');
     }
   }, [tempVerification, user, navigate]);
+
+  // Alerta SweetAlert2 de PIN enviado (con instrucción de revisar consola)
+  useEffect(() => {
+    if (tempVerification && !hasAlerted) {
+      setHasAlerted(true);
+      let title = '¡Código de Verificación Enviado!';
+      let text = 'Hemos enviado un código de verificación a su correo electrónico. Por motivos de desarrollo, también lo hemos enviado a la consola del backend. Por favor, revise la consola para obtener el código.';
+      let icon: 'success' | 'info' | 'warning' = 'success';
+
+      if (tempVerification.type === 'recovery') {
+        title = '¡Código de Recuperación Enviado!';
+        text = 'Hemos enviado un código de recuperación a su correo electrónico para restablecer su contraseña. Por motivos de desarrollo, también lo hemos enviado a la consola del backend. Por favor, revise la consola.';
+        icon = 'warning';
+      }
+
+      Swal.fire({
+        title: title,
+        html: `<p class="text-gray-600 mb-3 text-sm font-medium leading-relaxed">${text}</p><div class="bg-orange-50 border border-orange-200 rounded-2xl p-3 text-orange-600 font-bold text-xs uppercase tracking-wider animate-pulse flex items-center justify-center gap-1.5 mt-2">🔎 Revisar consola / terminal del backend</div>`,
+        icon: icon,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f97316', // Orange-500
+        background: '#ffffff',
+        customClass: {
+          popup: 'rounded-3xl shadow-2xl p-6 border border-gray-100',
+          confirmButton: 'rounded-2xl px-6 py-3 font-bold text-sm shadow-md transition-all outline-none border-none hover:bg-orange-600'
+        }
+      });
+    }
+  }, [tempVerification, hasAlerted]);
 
   const [pin, setPin] = useState<string[]>(Array(6).fill(''));
   const [newPassword, setNewPassword] = useState('');
@@ -104,13 +138,37 @@ export default function VerifyPinPage() {
 
         await resetPassword(pinStr, newPassword);
         setSuccess(true);
-        setTimeout(() => {
+        Swal.fire({
+          title: '¡Contraseña Restablecida!',
+          text: 'Su contraseña ha sido cambiada con éxito. Redirigiendo al inicio de sesión...',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+          background: '#ffffff',
+          customClass: {
+            popup: 'rounded-3xl border border-gray-100'
+          }
+        }).then(() => {
           navigate('/login');
-        }, 2000);
+        });
       } else {
         // Registro o Login MFA estándar
         await verifyPin(pinStr);
-        navigate('/');
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 1500,
+          timerProgressBar: true,
+          background: '#ffffff',
+        });
+        Toast.fire({
+          icon: 'success',
+          title: '¡Verificación Exitosa!',
+          text: 'Sesión iniciada correctamente.'
+        }).then(() => {
+          navigate('/');
+        });
       }
     } catch (err) {
       // El error se maneja en el contexto
@@ -194,12 +252,19 @@ export default function VerifyPinPage() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all outline-none text-sm text-gray-900 font-medium"
+                    className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all outline-none text-sm text-gray-900 font-medium"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
@@ -210,12 +275,19 @@ export default function VerifyPinPage() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                   <input
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirma la contraseña"
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all outline-none text-sm text-gray-900 font-medium"
+                    className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all outline-none text-sm text-gray-900 font-medium"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
             </div>

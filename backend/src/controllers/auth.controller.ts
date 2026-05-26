@@ -1,3 +1,4 @@
+// Hecho por mavasquez
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -8,7 +9,7 @@ const JWT_SECRET     = process.env.JWT_SECRET     ?? 'change-me-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '8h';
 
 const MAX_INTENTOS = 5;
-const BLOQUEO_MIN  = 30;
+const BLOQUEO_SEG  = 30;
 
 // ─── AUXILIARES DE CONSOLA (SIMULACIÓN DE CORREO LLAMATIVO) ────────────
 function imprimirCorreoSimulado(destinatario: string, asunto: string, titulo: string, contenido: string, codigo: string) {
@@ -202,9 +203,11 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     // 3. Bloqueo temporal
     if (usuario.BloqueadoHasta && new Date(usuario.BloqueadoHasta) > new Date()) {
+      const remainingMs = new Date(usuario.BloqueadoHasta).getTime() - new Date().getTime();
+      const remainingSec = Math.ceil(remainingMs / 1000);
       res.status(429).json({
         success: false,
-        message: `Cuenta bloqueada por múltiples intentos. Intente nuevamente en unos minutos.`,
+        message: `Cuenta bloqueada por múltiples intentos. Intente nuevamente en ${remainingSec} segundos.`,
       });
       return;
     }
@@ -220,7 +223,7 @@ export async function login(req: Request, res: Response): Promise<void> {
         .request()
         .input('id', sql.Int, usuario.UsuarioId)
         .input('intentos', sql.Int, nuevosIntentos)
-        .input('bloqueo', sql.DateTime2, debeBloquear ? addMinutes(new Date(), BLOQUEO_MIN) : null)
+        .input('bloqueo', sql.DateTime2, debeBloquear ? addSeconds(new Date(), BLOQUEO_SEG) : null)
         .query(`
           UPDATE Usuarios
           SET    IntentosFallidosLogin = @intentos,
@@ -232,11 +235,19 @@ export async function login(req: Request, res: Response): Promise<void> {
       await registrarIntento(pool, usuario.UsuarioId, emailClean, ip, userAgent, false, 'Contraseña incorrecta');
 
       const msg = debeBloquear
-        ? `Demasiados intentos fallidos. Cuenta bloqueada por ${BLOQUEO_MIN} minutos.`
+        ? `Demasiados intentos fallidos. Cuenta bloqueada por ${BLOQUEO_SEG} segundos.`
         : `Credenciales incorrectas. Intentos restantes: ${MAX_INTENTOS - nuevosIntentos}`;
 
       res.status(401).json({ success: false, message: msg });
       return;
+    }
+
+    // Reset failed login attempts on correct password entry
+    if (usuario.IntentosFallidosLogin > 0 || usuario.BloqueadoHasta) {
+      await pool
+        .request()
+        .input('userId', sql.Int, usuario.UsuarioId)
+        .query('UPDATE Usuarios SET IntentosFallidosLogin = 0, BloqueadoHasta = NULL WHERE UsuarioId = @userId');
     }
 
     // 5. Verificar si el email no está verificado
@@ -375,6 +386,11 @@ export async function verifyPin(req: Request, res: Response): Promise<void> {
         .request()
         .input('userId', sql.Int, userId)
         .query('UPDATE Usuarios SET Activo = 1, EmailVerificado = 1, IntentosFallidosLogin = 0, BloqueadoHasta = NULL WHERE UsuarioId = @userId');
+    } else if (type === 'mfa') {
+      await pool
+        .request()
+        .input('userId', sql.Int, userId)
+        .query('UPDATE Usuarios SET IntentosFallidosLogin = 0, BloqueadoHasta = NULL WHERE UsuarioId = @userId');
     }
 
     // 5. Si es de tipo login o registro exitoso, retornar JWT
@@ -612,6 +628,10 @@ export function me(req: Request, res: Response): void {
 // ─── Helpers internos ──────────────────────────────────────────
 function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
+}
+
+function addSeconds(date: Date, seconds: number): Date {
+  return new Date(date.getTime() + seconds * 1_000);
 }
 
 type Pool = Awaited<ReturnType<typeof getPool>>;
