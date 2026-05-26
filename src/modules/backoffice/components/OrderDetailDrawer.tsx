@@ -88,12 +88,10 @@ export default function OrderDetailDrawer({ open, onClose, order, onStatusChange
                     → {STATUS_LABELS[s]}
                   </button>
                 ))}
-                {order.estado !== 'Cancelado' && (
-                  <button onClick={() => onStatusChange('Cancelado')}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-200">
-                    Cancelar pedido
-                  </button>
-                )}
+                <button onClick={() => onStatusChange('Cancelado')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 transition-colors border border-red-200">
+                  Cancelar pedido
+                </button>
               </div>
             </div>
           )}
