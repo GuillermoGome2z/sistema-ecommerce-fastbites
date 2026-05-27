@@ -1,31 +1,41 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path   from 'path';
+
+// Carga .env desde el directorio de trabajo (backend/) — no depende de __dirname
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 
 import sql from 'mssql/msnodesqlv8';
 
 const primaryServer = process.env.DB_SERVER;
 const targetDb      = process.env.DB_DATABASE ?? 'FastBitesDB';
 const driver        = process.env.DB_ODBC_DRIVER ?? 'ODBC Driver 17 for SQL Server';
-const trust         = process.env.DB_TRUST_SERVER_CERTIFICATE === 'true' ? 'Yes' : 'No';
+const dbPort        = process.env.DB_PORT ? Number(process.env.DB_PORT) : null;
+const dbUser        = process.env.DB_USER   ?? '';
+const dbPass        = process.env.DB_PASSWORD ?? '';
 
 if (!primaryServer) throw new Error('DB_SERVER no está definido en .env');
 
-const FALLBACK_SERVERS = [
-  primaryServer,
-  '.\\SQLEXPRESS',
-  'localhost\\SQLEXPRESS',
-];
+// Si DB_PORT está definido, conecta directo por IP:puerto (sin SQL Server Browser).
+// Si no, intenta por nombre de instancia con fallbacks.
+const FALLBACK_SERVERS = dbPort
+  ? [`127.0.0.1,${dbPort}`]
+  : [primaryServer, 'localhost\\SQLEXPRES'];
 
 function buildConfig(server: string, database: string) {
+  const serverHost = server.includes(',') ? server.split(',')[0] : server;
+  const portNum    = server.includes(',') ? Number(server.split(',')[1]) : undefined;
+
   return {
-    server,
+    server:            serverHost,
+    ...(portNum           ? { port: portNum }                     : {}),
+    ...(dbUser            ? { user: dbUser, password: dbPass }    : {}),
     database,
-    connectionString:
-      `Driver={${driver}};Server=${server};Database=${database};` +
-      `Trusted_Connection=Yes;TrustServerCertificate=${trust};`,
+    connectionTimeout: 8000,
+    requestTimeout:    15000,
     options: {
       trustServerCertificate: true,
-      encrypt: false,
+      encrypt:                false,
+      ...(dbUser ? {} : { trustedConnection: true }),
     },
   } as unknown as sql.config;
 }
@@ -99,8 +109,8 @@ export async function getDiagnostics(): Promise<DiagnosticsResult> {
   // Paso 1: conectar a master y ejecutar diagnóstico
   let masterPool: sql.ConnectionPool | null = null;
   try {
-    console.log(`[DB DIAG] Conectando a master en ${primaryServer}...`);
-    masterPool = await sql.connect(buildConfig(primaryServer!, 'master'));
+    console.log(`[DB DIAG] Conectando a master en ${FALLBACK_SERVERS[0]}...`);
+    masterPool = await sql.connect(buildConfig(FALLBACK_SERVERS[0], 'master'));
     result.masterConnected = true;
     console.log('[DB DIAG] ✓ Conexión a master exitosa');
 
@@ -137,7 +147,7 @@ export async function getDiagnostics(): Promise<DiagnosticsResult> {
     let targetPool: sql.ConnectionPool | null = null;
     try {
       console.log(`[DB DIAG] Intentando conexión directa a ${targetDb}...`);
-      targetPool = await sql.connect(buildConfig(primaryServer!, targetDb));
+      targetPool = await sql.connect(buildConfig(FALLBACK_SERVERS[0], targetDb));
       result.targetDbConnected = true;
       console.log(`[DB DIAG] ✓ Conexión directa a ${targetDb} exitosa`);
 

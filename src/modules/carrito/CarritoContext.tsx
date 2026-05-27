@@ -15,6 +15,7 @@ interface CarritoContextType {
   incrementar: (id: string) => void;
   decrementar: (id: string) => void;
   eliminar: (id: string) => void;
+  agregarAlCarrito: (productoId: number, cantidad?: number) => Promise<void>;
   setSelectedAddress: (a: Address) => void;
   setSelectedPayment: (p: PaymentMethod) => void;
   confirmarPedido: () => Promise<string>;
@@ -189,6 +190,30 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const agregarAlCarrito = async (productoId: number, cantidad: number = 1): Promise<void> => {
+    const token = localStorage.getItem('fb_token');
+    if (!token) throw new Error('Debes iniciar sesión para agregar al carrito.');
+
+    const headers: HeadersInit = {
+      Authorization:  `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    const r = await fetch(`${API_BASE_URL}/api/cart/items`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ productoId, cantidad }),
+    });
+    const json = await r.json();
+    if (!json.success) throw new Error(json.message ?? 'Error al agregar al carrito.');
+
+    const cartRes = await fetch(`${API_BASE_URL}/api/cart`, { headers: { Authorization: `Bearer ${token}` } });
+    const cartJson = await cartRes.json();
+    if (cartJson.success && Array.isArray(cartJson.data?.items)) {
+      setItems((cartJson.data.items as BackendCartItem[]).map(adaptarCartItem));
+    }
+  };
+
   const confirmarPedido = async (): Promise<string> => {
     const token = localStorage.getItem('fb_token');
     if (!token) throw new Error('Debes iniciar sesión para confirmar el pedido.');
@@ -257,6 +282,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
         selectedPayment,
         totales,
         lastOrder,
+        agregarAlCarrito,
         incrementar,
         decrementar,
         eliminar,

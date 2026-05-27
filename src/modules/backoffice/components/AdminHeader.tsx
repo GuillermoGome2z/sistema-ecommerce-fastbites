@@ -1,4 +1,5 @@
 import { Menu, Bell, Search } from 'lucide-react';
+import { useAuth } from '../../auth/context/AuthContext';
 
 interface Props {
   title: string;
@@ -6,6 +7,14 @@ interface Props {
 }
 
 export default function AdminHeader({ title, onMenuToggle }: Props) {
+  const { user } = useAuth();
+  const initials = (user?.nombreCompleto ?? 'A')
+    .split(' ')
+    .map((n) => n[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <header className="bg-white border-b border-gray-100 px-4 sm:px-6 h-16 flex items-center justify-between gap-4 flex-shrink-0 shadow-sm">
       <div className="flex items-center gap-3">
@@ -34,7 +43,7 @@ export default function AdminHeader({ title, onMenuToggle }: Props) {
         </button>
 
         <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
-          A
+          {initials}
         </div>
       </div>
     </header>

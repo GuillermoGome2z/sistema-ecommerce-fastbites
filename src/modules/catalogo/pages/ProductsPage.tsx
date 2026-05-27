@@ -14,6 +14,7 @@ interface BackendProducto {
   Categoria: string;
   EsDestacado: number | boolean;
   Activo: number | boolean;
+  Imagen?: string | null;
 }
 
 const IMAGEN_CATEGORIA: Record<string, string> = {
@@ -32,7 +33,7 @@ function adaptar(p: BackendProducto): Producto {
     descripcion: p.Descripcion ?? '',
     precioBase: p.PrecioBase,
     categoria: p.Categoria as Categoria,
-    imagen: IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
+    imagen: p.Imagen ?? IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
     calorias: CALORIAS_CATEGORIA[p.Categoria] ?? 500,
     tiempoPreparacion: TIEMPO_CATEGORIA[p.Categoria] ?? 12,
     esDestacado: Boolean(p.EsDestacado),
