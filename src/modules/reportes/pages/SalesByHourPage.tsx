@@ -1,24 +1,51 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import ReportHeader from '../components/ReportHeader';
 import ReportFilterBar from '../components/ReportFilterBar';
 import SalesByHourTable from '../components/SalesByHourTable';
 import ReportChartCard from '../components/ReportChartCard';
-import { VENTAS_POR_HORA_MOCK, HORAS_LIST } from '../data/ventasPorHora.mock';
+import type { VentaPorHora } from '../types/reportes.types';
+import { API_BASE_URL } from '../../../config/api';
 
 export default function SalesByHourPage() {
   const navigate = useNavigate();
+  const [data, setData]       = useState<VentaPorHora[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
   const [restaurante, setRestaurante] = useState('');
-  const [horaFilter, setHoraFilter] = useState<string>('');
+  const [horaFilter, setHoraFilter]   = useState<string>('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('fb_token');
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${API_BASE_URL}/api/reports/ventas-hora`, { headers })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) setData(json.data as VentaPorHora[]);
+        else setError(json.message ?? 'Error al cargar el reporte.');
+      })
+      .catch(() => setError('No se pudo conectar con el servidor.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const restaurantesList = useMemo(
+    () => [...new Set(data.map((r) => r.Restaurante))].sort(),
+    [data],
+  );
+
+  const horasList = useMemo(
+    () => [...new Set(data.map((r) => r.Hora))].sort((a, b) => a - b),
+    [data],
+  );
 
   const filtered = useMemo(() => {
-    return VENTAS_POR_HORA_MOCK.filter((r) => {
+    return data.filter((r) => {
       if (restaurante && r.Restaurante !== restaurante) return false;
       if (horaFilter !== '' && r.Hora !== Number(horaFilter)) return false;
       return true;
     });
-  }, [restaurante, horaFilter]);
+  }, [data, restaurante, horaFilter]);
 
   const chartData = useMemo(() => {
     const map: Record<number, number> = {};
@@ -35,7 +62,7 @@ export default function SalesByHourPage() {
       className="text-sm border border-gray-200 rounded-xl px-3 py-1.5 text-gray-700 bg-gray-50 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 transition-all"
     >
       <option value="">Todas las horas</option>
-      {HORAS_LIST.map((h) => (
+      {horasList.map((h) => (
         <option key={h} value={h}>{h}:00</option>
       ))}
     </select>
@@ -50,7 +77,7 @@ export default function SalesByHourPage() {
           icon="⏰"
           actions={
             <button
-              onClick={() => navigate('/reportes')}
+              onClick={() => navigate('/admin/reportes')}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 font-medium transition-colors"
             >
               <ArrowLeft size={14} /> Volver
@@ -58,25 +85,42 @@ export default function SalesByHourPage() {
           }
         />
 
-        <ReportFilterBar
-          restaurante={restaurante}
-          onRestauranteChange={setRestaurante}
-          extra={horaSelect}
-        />
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-gray-500 text-sm">Cargando reporte...</p>
+          </div>
+        )}
 
-        <ReportChartCard
-          title={`Ventas por hora${restaurante ? ` — ${restaurante}` : ''}`}
-          data={chartData}
-          color="amber"
-          formatValue={(v) => `$${v.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
-          maxItems={16}
-        />
+        {!loading && error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-6 py-4 rounded-2xl text-center">
+            {error}
+          </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">{filtered.length} registros encontrados</p>
-        </div>
+        {!loading && !error && (
+          <>
+            <ReportFilterBar
+              restaurante={restaurante}
+              onRestauranteChange={setRestaurante}
+              restaurantes={restaurantesList}
+              extra={horaSelect}
+            />
 
-        <SalesByHourTable data={filtered} />
+            <ReportChartCard
+              title={`Ventas por hora${restaurante ? ` — ${restaurante}` : ''}`}
+              data={chartData}
+              color="amber"
+              formatValue={(v) => `$${v.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+              maxItems={16}
+            />
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">{filtered.length} registros encontrados</p>
+            </div>
+
+            <SalesByHourTable data={filtered} />
+          </>
+        )}
       </div>
     </div>
   );

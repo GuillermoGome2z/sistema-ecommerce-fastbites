@@ -138,7 +138,7 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <ProductFilters categoriaActiva={categoriaActiva} onChange={setCategoriaActiva} />
+        <ProductFilters categoriaActiva={categoriaActiva} onChange={setCategoriaActiva} productos={productos} />
         <ProductGrid productos={productosFiltrados} />
       </div>
     </div>

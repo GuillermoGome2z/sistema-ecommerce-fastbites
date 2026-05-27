@@ -1,20 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { X } from 'lucide-react';
-import type { AdminProduct } from '../types/backoffice.types';
-import { ADMIN_RESTAURANTES_MOCK } from '../data/adminRestaurantes.mock';
+import type { AdminProduct, AdminRestaurant } from '../types/backoffice.types';
 import { CATEGORIAS_ADMIN } from '../data/adminProductos.mock';
+import { ADMIN_RESTAURANTES_MOCK } from '../data/adminRestaurantes.mock';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   product?: AdminProduct | null;
   onSave: (data: Partial<AdminProduct>) => void;
+  restaurantes?: AdminRestaurant[];
+  categorias?: string[];
 }
 
-export default function ProductFormModal({ open, onClose, product, onSave }: Props) {
+export default function ProductFormModal({ open, onClose, product, onSave, restaurantes, categorias }: Props) {
+  const restList = restaurantes && restaurantes.length > 0 ? restaurantes : ADMIN_RESTAURANTES_MOCK;
+  const catList  = categorias  && categorias.length  > 0 ? categorias  : CATEGORIAS_ADMIN;
+
   const [form, setForm] = useState({
-    nombre: '', descripcion: '', precioBase: '', categoria: 'Almuerzo',
-    restauranteId: '1', imagen: '', calorias: '', tiempoPreparacion: '',
+    nombre: '', descripcion: '', precioBase: '', categoria: catList[0] ?? 'Almuerzo',
+    restauranteId: String(restList[0]?.id ?? 1), imagen: '', calorias: '', tiempoPreparacion: '',
     esDestacado: false, activo: true,
   });
 
@@ -28,16 +33,29 @@ export default function ProductFormModal({ open, onClose, product, onSave }: Pro
         esDestacado: product.esDestacado, activo: product.activo,
       });
     } else {
-      setForm({ nombre: '', descripcion: '', precioBase: '', categoria: 'Almuerzo', restauranteId: '1', imagen: '', calorias: '', tiempoPreparacion: '', esDestacado: false, activo: true });
+      setForm({
+        nombre: '', descripcion: '', precioBase: '',
+        categoria: catList[0] ?? 'Almuerzo',
+        restauranteId: String(restList[0]?.id ?? 1),
+        imagen: '', calorias: '', tiempoPreparacion: '',
+        esDestacado: false, activo: true,
+      });
     }
   }, [product, open]);
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const rest = ADMIN_RESTAURANTES_MOCK.find((r) => r.id === Number(form.restauranteId));
-    onSave({ ...form, precioBase: Number(form.precioBase), restauranteId: Number(form.restauranteId), restaurante: rest?.nombre ?? '', calorias: Number(form.calorias), tiempoPreparacion: Number(form.tiempoPreparacion) });
+    const rest = restList.find((r) => r.id === Number(form.restauranteId));
+    onSave({
+      ...form,
+      precioBase:        Number(form.precioBase),
+      restauranteId:     Number(form.restauranteId),
+      restaurante:       rest?.nombre ?? '',
+      calorias:          Number(form.calorias),
+      tiempoPreparacion: Number(form.tiempoPreparacion),
+    });
     onClose();
   };
 
@@ -65,13 +83,13 @@ export default function ProductFormModal({ open, onClose, product, onSave }: Pro
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Categoría</label>
               <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 transition-colors bg-white">
-                {CATEGORIAS_ADMIN.map((c) => <option key={c} value={c}>{c}</option>)}
+                {catList.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Restaurante</label>
               <select value={form.restauranteId} onChange={(e) => setForm({ ...form, restauranteId: e.target.value })} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 transition-colors bg-white">
-                {ADMIN_RESTAURANTES_MOCK.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                {restList.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
             </div>
             <div>

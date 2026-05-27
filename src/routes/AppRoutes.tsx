@@ -39,7 +39,10 @@ import AdminOrdersPage     from '../modules/backoffice/pages/AdminOrdersPage';
 import AdminOrderDetailPage from '../modules/backoffice/pages/AdminOrderDetailPage';
 
 // Reports Pages
-import ReportsDashboardPage from '../modules/reportes/pages/ReportsDashboardPage';
+import ReportsDashboardPage  from '../modules/reportes/pages/ReportsDashboardPage';
+import SalesByDayPage        from '../modules/reportes/pages/SalesByDayPage';
+import SalesByHourPage       from '../modules/reportes/pages/SalesByHourPage';
+import SalesByDaypartPage    from '../modules/reportes/pages/SalesByDaypartPage';
 
 export default function AppRoutes() {
   return (
@@ -52,18 +55,21 @@ export default function AppRoutes() {
           <Route path="/recuperar-password"  element={<ForgotPasswordPage />} />
           <Route path="/verificar-pin"       element={<VerifyPinPage />} />
 
-          {/* Rutas de cliente — con ClientLayout */}
-          <Route element={<ClientLayout />}>
-            <Route path="/"          element={<HomePage />} />
-            <Route path="/productos" element={<ProductsPage />} />
-            <Route path="/carrito"   element={<CartPage />} />
-          </Route>
-
-          {/* Flujo de compra — envuelto en CarritoProvider */}
+          {/* CarritoProvider envuelve TODO lo que use useCarrito() */}
           <Route element={<CarritoProvider><Outlet /></CarritoProvider>}>
+
+            {/* Páginas de cliente con navbar compartido */}
+            <Route element={<ClientLayout />}>
+              <Route path="/"          element={<HomePage />} />
+              <Route path="/productos" element={<ProductsPage />} />
+              <Route path="/carrito"   element={<CartPage />} />
+            </Route>
+
+            {/* Flujo de compra — nav propio en cada página */}
             <Route path="/checkout"             element={<CheckoutPage />} />
             <Route path="/confirmacion/:numero" element={<OrderConfirmationPage />} />
             <Route path="/pedidos"              element={<OrderHistoryPage />} />
+
           </Route>
 
           {/* Perfil del cliente */}
@@ -82,7 +88,10 @@ export default function AppRoutes() {
             <Route path="offers"      element={<AdminOffersPage />} />
             <Route path="orders"      element={<AdminOrdersPage />} />
             <Route path="orders/:id"  element={<AdminOrderDetailPage />} />
-            <Route path="reportes"    element={<ReportsDashboardPage />} />
+            <Route path="reportes"              element={<ReportsDashboardPage />} />
+            <Route path="reportes/ventas-dia"     element={<SalesByDayPage />} />
+            <Route path="reportes/ventas-hora"    element={<SalesByHourPage />} />
+            <Route path="reportes/ventas-daypart" element={<SalesByDaypartPage />} />
           </Route>
 
           {/* Fallback */}

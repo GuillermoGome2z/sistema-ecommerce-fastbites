@@ -142,10 +142,10 @@ export default function ReportsDashboardPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: <BarChart2 size={18} />, title: 'Ventas por Día', desc: 'Análisis diario por restaurante', path: '/reportes/ventas-dia', color: 'orange' },
-            { icon: <Clock size={18} />, title: 'Ventas por Hora', desc: 'Identifica horas pico', path: '/reportes/ventas-hora', color: 'amber' },
-            { icon: <Utensils size={18} />, title: 'Ventas por Daypart', desc: 'Desayuno, Almuerzo y Cena', path: '/reportes/ventas-daypart', color: 'red' },
-            { icon: <TrendingUp size={18} />, title: 'Estado de Integración', desc: 'Revisión técnica del sistema', path: '/reportes/integracion', color: 'gray' },
+            { icon: <BarChart2 size={18} />, title: 'Ventas por Día', desc: 'Análisis diario por restaurante', path: '/admin/reportes/ventas-dia', color: 'orange' },
+            { icon: <Clock size={18} />, title: 'Ventas por Hora', desc: 'Identifica horas pico', path: '/admin/reportes/ventas-hora', color: 'amber' },
+            { icon: <Utensils size={18} />, title: 'Ventas por Daypart', desc: 'Desayuno, Almuerzo y Cena', path: '/admin/reportes/ventas-daypart', color: 'red' },
+            { icon: <TrendingUp size={18} />, title: 'Estado de Integración', desc: 'Revisión técnica del sistema', path: '/admin/reportes/integracion', color: 'gray' },
           ].map((card) => (
             <button
               key={card.path}

@@ -4,6 +4,7 @@ import { RESTAURANTES_LIST } from '../data/ventasPorDia.mock';
 interface ReportFilterBarProps {
   restaurante: string;
   onRestauranteChange: (v: string) => void;
+  restaurantes?: string[];
   fechaInicio?: string;
   onFechaInicioChange?: (v: string) => void;
   fechaFin?: string;
@@ -13,10 +14,13 @@ interface ReportFilterBarProps {
 
 export default function ReportFilterBar({
   restaurante, onRestauranteChange,
+  restaurantes,
   fechaInicio, onFechaInicioChange,
   fechaFin, onFechaFinChange,
   extra,
 }: ReportFilterBarProps) {
+  const lista = restaurantes ?? RESTAURANTES_LIST;
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-1.5 text-gray-400 text-sm font-medium">
@@ -29,7 +33,7 @@ export default function ReportFilterBar({
         className="text-sm border border-gray-200 rounded-xl px-3 py-1.5 text-gray-700 bg-gray-50 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 transition-all"
       >
         <option value="">Todos los restaurantes</option>
-        {RESTAURANTES_LIST.map((r) => (
+        {lista.map((r) => (
           <option key={r} value={r}>{r}</option>
         ))}
       </select>
