@@ -16,8 +16,8 @@ export default function AdminLayout() {
   const isAuthorized = user && user.roles.some(r => ['Administrador', 'Supervisor', 'EmpleadoBackoffice'].includes(r));
 
   if (!isAuthorized) {
-    console.warn('[SECURITY] Acceso denegado al panel de administración. Redirigiendo a home.');
-    return <Navigate to="/" replace />;
+    console.warn('[SECURITY] Acceso denegado al panel de administración. Redirigiendo a login.');
+    return <Navigate to="/login" replace />;
   }
 
   // Las páginas del backoffice ya se envuelven a sí mismas en su propio AdminLayout interno.
