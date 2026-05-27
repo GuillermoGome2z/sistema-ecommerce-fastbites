@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
-import type { CartItem, Address, PaymentMethod, CartTotals, LastOrder } from './types/cart.types';
+import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
+import type { CartItem, Address, PaymentMethod, CartTotals, LastOrder, PaymentType } from './types/cart.types';
 import { CARRITO_MOCK } from './data/carrito.mock';
 import { DIRECCIONES_MOCK } from './data/direcciones.mock';
 import { METODOS_PAGO_MOCK } from './data/metodosPago.mock';
+import { API_BASE_URL } from '../../config/api';
 
 interface CarritoContextType {
   items: CartItem[];
@@ -17,13 +18,64 @@ interface CarritoContextType {
   eliminar: (id: string) => void;
   setSelectedAddress: (a: Address) => void;
   setSelectedPayment: (p: PaymentMethod) => void;
-  confirmarPedido: () => string;
+  confirmarPedido: () => Promise<string>;
+}
+
+// ── Backend shape adapters ────────────────────────────────────────
+interface BackendAddress {
+  DireccionId: number;
+  Alias: string | null;
+  Calle: string;
+  NumeroExterior: string | null;
+  Colonia: string | null;
+  Ciudad: string;
+  CodigoPostal: string;
+  Referencias: string | null;
+  EsPrincipal: boolean | number;
+}
+
+interface BackendPaymentMethod {
+  MetodoPagoId: number;
+  TipoPagoId: number;
+  NombreTipo: string;
+  Alias: string | null;
+  Ultimos4Digitos: string | null;
+  MarcaTarjeta: string | null;
+  EsPrincipal: boolean | number;
+}
+
+function adaptarDireccion(d: BackendAddress): Address {
+  const partes = [d.Calle, d.NumeroExterior, d.Colonia].filter(Boolean);
+  return {
+    id:            d.DireccionId,
+    alias:         d.Alias ?? 'Dirección',
+    calle:         partes.join(', '),
+    ciudad:        d.Ciudad,
+    codigoPostal:  d.CodigoPostal,
+    referencias:   d.Referencias ?? undefined,
+    esPrincipal:   Boolean(d.EsPrincipal),
+  };
+}
+
+function adaptarMetodoPago(m: BackendPaymentMethod): PaymentMethod {
+  const tipo: PaymentType = m.NombreTipo.toLowerCase().includes('tarjeta') ? 'tarjeta' : 'efectivo';
+  return {
+    id:              m.MetodoPagoId,
+    tipoPagoId:      m.TipoPagoId,
+    tipo,
+    alias:           m.Alias ?? m.NombreTipo,
+    ultimosDigitos:  m.Ultimos4Digitos ?? undefined,
+    banco:           m.MarcaTarjeta ?? undefined,
+    esPrincipal:     Boolean(m.EsPrincipal),
+  };
 }
 
 const CarritoContext = createContext<CarritoContextType | null>(null);
 
 export function CarritoProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(CARRITO_MOCK);
+  const [direcciones, setDirecciones] = useState<Address[]>(DIRECCIONES_MOCK);
+  const [metodosPago, setMetodosPago] = useState<PaymentMethod[]>(METODOS_PAGO_MOCK);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(
     DIRECCIONES_MOCK.find((d) => d.esPrincipal) ?? null
   );
@@ -31,6 +83,32 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     METODOS_PAGO_MOCK.find((m) => m.esPrincipal) ?? null
   );
   const [lastOrder, setLastOrder] = useState<LastOrder | null>(null);
+
+  // Load real addresses and payment methods if user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('fb_token');
+    if (!token) return;
+
+    const headers: HeadersInit = { Authorization: `Bearer ${token}` };
+
+    Promise.all([
+      fetch(`${API_BASE_URL}/api/customers/me/addresses`, { headers }).then((r) => r.json()),
+      fetch(`${API_BASE_URL}/api/customers/me/payment-methods`, { headers }).then((r) => r.json()),
+    ])
+      .then(([addrJson, payJson]) => {
+        if (addrJson.success && Array.isArray(addrJson.data) && addrJson.data.length > 0) {
+          const adapted = (addrJson.data as BackendAddress[]).map(adaptarDireccion);
+          setDirecciones(adapted);
+          setSelectedAddress(adapted.find((d) => d.esPrincipal) ?? adapted[0]);
+        }
+        if (payJson.success && Array.isArray(payJson.data) && payJson.data.length > 0) {
+          const adapted = (payJson.data as BackendPaymentMethod[]).map(adaptarMetodoPago);
+          setMetodosPago(adapted);
+          setSelectedPayment(adapted.find((m) => m.esPrincipal) ?? adapted[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const totales = useMemo<CartTotals>(() => {
     const subtotal = parseFloat(items.reduce((s, i) => s + i.subtotal, 0).toFixed(2));
@@ -76,16 +154,59 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const confirmarPedido = (): string => {
+  const confirmarPedido = async (): Promise<string> => {
+    const token = localStorage.getItem('fb_token');
+    if (!token) throw new Error('Debes iniciar sesión para confirmar el pedido.');
+    if (!selectedPayment) throw new Error('Selecciona un método de pago.');
+
+    const headers: HeadersInit = {
+      Authorization:  `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    // 1. Clear any existing backend cart
+    await fetch(`${API_BASE_URL}/api/cart`, { method: 'DELETE', headers }).catch(() => {});
+
+    // 2. Sync local items to backend cart
+    for (const item of items) {
+      const r = await fetch(`${API_BASE_URL}/api/cart/items`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ productoId: item.producto.id, cantidad: item.cantidad }),
+      });
+      const json = await r.json();
+      if (!json.success) throw new Error(json.message ?? 'Error al sincronizar el carrito con el servidor.');
+    }
+
+    // 3. Create the order
+    const body: Record<string, unknown> = {
+      tipoPagoId:  selectedPayment.tipoPagoId,
+      metodoPagoId: selectedPayment.id,
+    };
+    if (selectedAddress) {
+      body.direccionId = selectedAddress.id;
+    } else {
+      body.tipoEntrega = 'Recoger';
+    }
+
+    const orderRes = await fetch(`${API_BASE_URL}/api/orders`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    const orderJson = await orderRes.json();
+    if (!orderJson.success) throw new Error(orderJson.message ?? 'Error al crear el pedido.');
+
+    const pedidoId: number = orderJson.data.pedidoId;
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const rand = Math.floor(Math.random() * 900 + 100).toString();
-    const numero = `FB-${dateStr}-${rand}`;
+    const numero = `FB-${dateStr}-${String(pedidoId).padStart(3, '0')}`;
+
     setLastOrder({
       numeroPedido: numero,
-      direccion: selectedAddress,
-      metodoPago: selectedPayment,
-      totales: { ...totales },
+      direccion:   selectedAddress,
+      metodoPago:  selectedPayment,
+      totales:     { ...totales },
     });
     setItems([]);
     return numero;
@@ -95,8 +216,8 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     <CarritoContext.Provider
       value={{
         items,
-        direcciones: DIRECCIONES_MOCK,
-        metodosPago: METODOS_PAGO_MOCK,
+        direcciones,
+        metodosPago,
         selectedAddress,
         selectedPayment,
         totales,

@@ -38,8 +38,9 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<CheckoutStep>('carrito');
   const [error, setError] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError('');
     if (step === 'carrito') {
       setStep('direccion');
@@ -56,8 +57,15 @@ export default function CheckoutPage() {
       }
       setStep('confirmacion');
     } else if (step === 'confirmacion') {
-      const numero = confirmarPedido();
-      navigate(`/confirmacion/${numero}`);
+      setConfirming(true);
+      try {
+        const numero = await confirmarPedido();
+        navigate(`/confirmacion/${numero}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al confirmar el pedido. Intenta de nuevo.');
+      } finally {
+        setConfirming(false);
+      }
     }
   };
 
@@ -212,15 +220,15 @@ export default function CheckoutPage() {
                 )}
                 <button
                   onClick={handleNext}
-                  disabled={items.length === 0}
+                  disabled={items.length === 0 || confirming}
                   className={`flex items-center gap-2 font-bold px-6 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                     step === 'confirmacion'
                       ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-100'
                       : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100'
                   }`}
                 >
-                  {STEP_BUTTONS[step]}
-                  <ArrowRight size={15} />
+                  {confirming ? 'Procesando...' : STEP_BUTTONS[step]}
+                  {!confirming && <ArrowRight size={15} />}
                 </button>
               </div>
 
