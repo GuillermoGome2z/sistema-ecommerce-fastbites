@@ -1,61 +1,106 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, Clock, TrendingUp, Utensils, ArrowRight } from 'lucide-react';
 import ReportHeader from '../components/ReportHeader';
 import ReportStatCard from '../components/ReportStatCard';
 import ReportChartCard from '../components/ReportChartCard';
-import { VENTAS_POR_DIA_MOCK } from '../data/ventasPorDia.mock';
-import { VENTAS_POR_HORA_MOCK } from '../data/ventasPorHora.mock';
-import { VENTAS_POR_DAYPART_MOCK } from '../data/ventasPorDaypart.mock';
-import type { DaypartName } from '../types/reportes.types';
+import type { VentaPorDia, VentaPorHora, VentaPorDaypart, DaypartName } from '../types/reportes.types';
+import { API_BASE_URL } from '../../../config/api';
 
 const DAYPART_EMOJI: Record<DaypartName, string> = { Desayuno: '🌅', Almuerzo: '🍔', Cena: '🍕' };
 
 export default function ReportsDashboardPage() {
   const navigate = useNavigate();
 
+  const [ventasDia, setVentasDia] = useState<VentaPorDia[]>([]);
+  const [ventasHora, setVentasHora] = useState<VentaPorHora[]>([]);
+  const [ventasDaypart, setVentasDaypart] = useState<VentaPorDaypart[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('fb_token');
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+    Promise.all([
+      fetch(`${API_BASE_URL}/api/reports/ventas-dia`, { headers }),
+      fetch(`${API_BASE_URL}/api/reports/ventas-hora`, { headers }),
+      fetch(`${API_BASE_URL}/api/reports/ventas-daypart`, { headers }),
+    ])
+      .then(async ([resDia, resHora, resDaypart]) => {
+        const [jsonDia, jsonHora, jsonDaypart] = await Promise.all([
+          resDia.json(),
+          resHora.json(),
+          resDaypart.json(),
+        ]);
+        if (jsonDia.success) setVentasDia(jsonDia.data);
+        if (jsonHora.success) setVentasHora(jsonHora.data);
+        if (jsonDaypart.success) setVentasDaypart(jsonDaypart.data);
+      })
+      .catch(() => setError('No se pudo conectar con el servidor. Verifica que el backend esté corriendo.'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const summary = useMemo(() => {
-    const totalVentas = VENTAS_POR_DIA_MOCK.reduce((s, r) => s + r.TotalVentas, 0);
-    const totalPedidos = VENTAS_POR_DIA_MOCK.reduce((s, r) => s + r.TotalPedidos, 0);
+    const totalVentas = ventasDia.reduce((s, r) => s + r.TotalVentas, 0);
+    const totalPedidos = ventasDia.reduce((s, r) => s + r.TotalPedidos, 0);
     const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
 
     const daypartTotals: Record<string, number> = {};
-    VENTAS_POR_DAYPART_MOCK.forEach((r) => {
+    ventasDaypart.forEach((r) => {
       daypartTotals[r.Daypart] = (daypartTotals[r.Daypart] ?? 0) + r.TotalVentas;
     });
     const daypartMasVendido = Object.entries(daypartTotals).sort((a, b) => b[1] - a[1])[0]?.[0] as DaypartName ?? 'Almuerzo';
 
     const horaTotals: Record<number, number> = {};
-    VENTAS_POR_HORA_MOCK.forEach((r) => {
+    ventasHora.forEach((r) => {
       horaTotals[r.Hora] = (horaTotals[r.Hora] ?? 0) + r.TotalVentas;
     });
     const horaMasVentas = Number(Object.entries(horaTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 13);
 
     return { totalVentas, totalPedidos, ticketPromedio, daypartMasVendido, horaMasVentas };
-  }, []);
+  }, [ventasDia, ventasDaypart, ventasHora]);
 
   const chartDia = useMemo(() => {
     const map: Record<string, number> = {};
-    VENTAS_POR_DIA_MOCK.forEach((r) => { map[r.Fecha] = (map[r.Fecha] ?? 0) + r.TotalVentas; });
+    ventasDia.forEach((r) => { map[r.Fecha] = (map[r.Fecha] ?? 0) + r.TotalVentas; });
     return Object.entries(map).map(([label, value]) => ({ label, value })).sort((a, b) => a.label.localeCompare(b.label));
-  }, []);
+  }, [ventasDia]);
 
   const chartHora = useMemo(() => {
     const map: Record<number, number> = {};
-    VENTAS_POR_HORA_MOCK.forEach((r) => { map[r.Hora] = (map[r.Hora] ?? 0) + r.TotalVentas; });
+    ventasHora.forEach((r) => { map[r.Hora] = (map[r.Hora] ?? 0) + r.TotalVentas; });
     return Object.entries(map)
       .map(([h, value]) => ({ label: `${h}:00`, value }))
       .sort((a, b) => parseInt(a.label) - parseInt(b.label));
-  }, []);
+  }, [ventasHora]);
 
   const chartDaypart = useMemo(() => {
     const map: Record<string, number> = {};
-    VENTAS_POR_DAYPART_MOCK.forEach((r) => { map[r.Daypart] = (map[r.Daypart] ?? 0) + r.TotalVentas; });
+    ventasDaypart.forEach((r) => { map[r.Daypart] = (map[r.Daypart] ?? 0) + r.TotalVentas; });
     return Object.entries(map).map(([label, value]) => ({ label, value }));
-  }, []);
+  }, [ventasDaypart]);
 
   const h12 = summary.horaMasVentas > 12 ? summary.horaMasVentas - 12 : summary.horaMasVentas;
   const suffix = summary.horaMasVentas >= 12 ? 'PM' : 'AM';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Cargando reportes...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-6 py-4 rounded-2xl max-w-md text-center">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
