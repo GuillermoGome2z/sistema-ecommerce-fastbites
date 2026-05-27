@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Flame, ShoppingCart, Tag, Star } from 'lucide-react';
+import { ArrowLeft, Clock, Flame, ShoppingCart, Tag, Star, Check } from 'lucide-react';
 import type { Categoria, Producto } from '../types/product.types';
 import { API_BASE_URL } from '../../../config/api';
+import { useCarrito } from '../../carrito/CarritoContext';
 
 interface BackendProductoBase {
   ProductoId: number;
@@ -12,6 +13,7 @@ interface BackendProductoBase {
   Categoria: string;
   EsDestacado: number | boolean;
   Activo?: number | boolean;
+  Imagen?: string | null;
 }
 
 interface BackendProductoDetalle extends BackendProductoBase {
@@ -37,7 +39,7 @@ function adaptar(p: BackendProductoBase): Producto {
     descripcion: p.Descripcion ?? '',
     precioBase: p.PrecioBase,
     categoria: p.Categoria as Categoria,
-    imagen: IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
+    imagen: p.Imagen ?? IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
     calorias: (p as BackendProductoDetalle).Calorias || (CALORIAS_CATEGORIA[p.Categoria] ?? 500),
     tiempoPreparacion: (p as BackendProductoDetalle).TiempoPreparacion || (TIEMPO_CATEGORIA[p.Categoria] ?? 12),
     esDestacado: Boolean(p.EsDestacado),
@@ -45,13 +47,35 @@ function adaptar(p: BackendProductoBase): Producto {
   };
 }
 
+function RelatedImg({ src, alt }: { src: string; alt: string }) {
+  const [err, setErr] = useState(false);
+  if (err) return (
+    <div className="w-full h-full bg-orange-50 flex items-center justify-center">
+      <span className="text-3xl">🍽️</span>
+    </div>
+  );
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setErr(true)}
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    />
+  );
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { agregarAlCarrito } = useCarrito();
   const [producto, setProducto] = useState<Producto | null>(null);
   const [relacionados, setRelacionados] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -127,11 +151,19 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Image */}
             <div className="relative h-72 lg:h-auto min-h-80">
-              <img
-                src={producto.imagen}
-                alt={producto.nombre}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              {imgError ? (
+                <div className="absolute inset-0 bg-orange-50 flex flex-col items-center justify-center text-orange-300">
+                  <span className="text-7xl mb-2">🍽️</span>
+                  <span className="text-sm text-gray-400">{producto.nombre}</span>
+                </div>
+              ) : (
+                <img
+                  src={producto.imagen}
+                  alt={producto.nombre}
+                  onError={() => setImgError(true)}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              )}
               {producto.esDestacado && (
                 <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                   <Star size={12} fill="white" />
@@ -183,9 +215,29 @@ export default function ProductDetailPage() {
                   </span>
                   <span className="text-gray-500 text-sm mb-1.5">precio base</span>
                 </div>
-                <button className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-lg px-6 py-4 rounded-2xl transition-all shadow-lg shadow-orange-200">
-                  <ShoppingCart size={22} />
-                  Agregar al Carrito
+                {addError && (
+                  <p className="text-red-500 text-sm mb-3 text-center">{addError}</p>
+                )}
+                <button
+                  onClick={async () => {
+                    if (adding || added) return;
+                    setAdding(true);
+                    setAddError('');
+                    try {
+                      await agregarAlCarrito(producto.id);
+                      setAdded(true);
+                      setTimeout(() => setAdded(false), 2000);
+                    } catch (err) {
+                      setAddError(err instanceof Error ? err.message : 'Error al agregar al carrito.');
+                    } finally {
+                      setAdding(false);
+                    }
+                  }}
+                  disabled={adding}
+                  className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 active:scale-95 disabled:opacity-60 text-white font-bold text-lg px-6 py-4 rounded-2xl transition-all shadow-lg shadow-orange-200"
+                >
+                  {added ? <Check size={22} /> : <ShoppingCart size={22} />}
+                  {adding ? 'Agregando...' : added ? '¡Agregado!' : 'Agregar al Carrito'}
                 </button>
                 <button
                   onClick={() => navigate('/productos')}
@@ -212,11 +264,7 @@ export default function ProductDetailPage() {
                   className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group"
                 >
                   <div className="h-40 overflow-hidden">
-                    <img
-                      src={p.imagen}
-                      alt={p.nombre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <RelatedImg src={p.imagen} alt={p.nombre} />
                   </div>
                   <div className="p-4">
                     <p className="font-bold text-gray-900">{p.nombre}</p>

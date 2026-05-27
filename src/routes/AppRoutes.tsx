@@ -15,6 +15,7 @@ import AdminLayout         from '../layouts/AdminLayout';
 // Páginas existentes — solo importar, NUNCA modificar
 import HomePage            from '../modules/catalogo/pages/HomePage';
 import ProductsPage        from '../modules/catalogo/pages/ProductsPage';
+import ProductDetailPage   from '../modules/catalogo/pages/ProductDetailPage';
 import CartPage            from '../modules/carrito/pages/CartPage';
 
 // Flujo de compra
@@ -64,6 +65,9 @@ export default function AppRoutes() {
               <Route path="/productos" element={<ProductsPage />} />
               <Route path="/carrito"   element={<CartPage />} />
             </Route>
+
+            {/* Detalle de producto — navbar propio, dentro de CarritoProvider */}
+            <Route path="/productos/:id" element={<ProductDetailPage />} />
 
             {/* Flujo de compra — nav propio en cada página */}
             <Route path="/checkout"             element={<CheckoutPage />} />

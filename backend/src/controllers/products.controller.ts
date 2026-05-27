@@ -12,13 +12,19 @@ export async function getProducts(_req: Request, res: Response): Promise<void> {
         p.Nombre,
         p.Descripcion,
         p.PrecioBase,
-        c.Nombre  AS Categoria,
-        r.Nombre  AS Restaurante,
+        c.Nombre     AS Categoria,
+        r.Nombre     AS Restaurante,
         p.EsDestacado,
-        p.Activo
+        p.Activo,
+        img.UrlImagen AS Imagen
       FROM Productos p
       INNER JOIN Categorias   c ON c.CategoriaId   = p.CategoriaId
       INNER JOIN Restaurantes r ON r.RestauranteId = p.RestauranteId
+      OUTER APPLY (
+        SELECT TOP 1 UrlImagen
+        FROM ImagenesProducto
+        WHERE ProductoId = p.ProductoId AND EsPrincipal = 1 AND Activo = 1
+      ) img
       WHERE p.Activo = 1
       ORDER BY p.EsDestacado DESC, p.Nombre ASC
     `);
@@ -62,10 +68,16 @@ export async function getProductById(req: Request, res: Response): Promise<void>
           p.EsDestacado,
           ISNULL(p.Calorias, 0)             AS Calorias,
           ISNULL(p.TiempoPreparacion, 0)    AS TiempoPreparacion,
-          p.Activo
+          p.Activo,
+          img.UrlImagen                     AS Imagen
         FROM  Productos    p
         INNER JOIN Categorias   c ON c.CategoriaId   = p.CategoriaId
         INNER JOIN Restaurantes r ON r.RestauranteId = p.RestauranteId
+        OUTER APPLY (
+          SELECT TOP 1 UrlImagen
+          FROM ImagenesProducto
+          WHERE ProductoId = p.ProductoId AND EsPrincipal = 1 AND Activo = 1
+        ) img
         WHERE p.ProductoId = @id
           AND p.Activo = 1
       `);
@@ -86,10 +98,16 @@ export async function getProductById(req: Request, res: Response): Promise<void>
           p.Nombre,
           p.Descripcion,
           p.PrecioBase,
-          c.Nombre  AS Categoria,
-          p.EsDestacado
+          c.Nombre      AS Categoria,
+          p.EsDestacado,
+          img.UrlImagen AS Imagen
         FROM  Productos    p
         INNER JOIN Categorias c ON c.CategoriaId = p.CategoriaId
+        OUTER APPLY (
+          SELECT TOP 1 UrlImagen
+          FROM ImagenesProducto
+          WHERE ProductoId = p.ProductoId AND EsPrincipal = 1 AND Activo = 1
+        ) img
         WHERE p.CategoriaId = @catId
           AND p.ProductoId <> @excId
           AND p.Activo = 1
