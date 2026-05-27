@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { CarritoProvider } from '../modules/carrito/CarritoContext';
 import { AuthProvider } from '../modules/auth/context/AuthContext';
 
 // Auth — páginas creadas
@@ -15,6 +16,16 @@ import AdminLayout         from '../layouts/AdminLayout';
 import HomePage            from '../modules/catalogo/pages/HomePage';
 import ProductsPage        from '../modules/catalogo/pages/ProductsPage';
 import CartPage            from '../modules/carrito/pages/CartPage';
+
+// Flujo de compra
+import CheckoutPage        from '../modules/carrito/pages/CheckoutPage';
+import OrderConfirmationPage from '../modules/carrito/pages/OrderConfirmationPage';
+import OrderHistoryPage    from '../modules/carrito/pages/OrderHistoryPage';
+
+// Perfil del cliente
+import MiCuentaPage        from '../modules/cliente/pages/MiCuentaPage';
+import MisDireccionesPage  from '../modules/cliente/pages/MisDireccionesPage';
+import MisMetodosPagoPage  from '../modules/cliente/pages/MisMetodosPagoPage';
 
 // Backoffice Pages
 import AdminDashboardPage  from '../modules/backoffice/pages/AdminDashboardPage';
@@ -47,6 +58,18 @@ export default function AppRoutes() {
             <Route path="/productos" element={<ProductsPage />} />
             <Route path="/carrito"   element={<CartPage />} />
           </Route>
+
+          {/* Flujo de compra — envuelto en CarritoProvider */}
+          <Route element={<CarritoProvider><Outlet /></CarritoProvider>}>
+            <Route path="/checkout"             element={<CheckoutPage />} />
+            <Route path="/confirmacion/:numero" element={<OrderConfirmationPage />} />
+            <Route path="/pedidos"              element={<OrderHistoryPage />} />
+          </Route>
+
+          {/* Perfil del cliente */}
+          <Route path="/mi-cuenta"               element={<MiCuentaPage />} />
+          <Route path="/mis-direcciones"         element={<MisDireccionesPage />} />
+          <Route path="/mis-metodos-pago"        element={<MisMetodosPagoPage />} />
 
           {/* Rutas de admin — con AdminLayout */}
           <Route path="/admin" element={<AdminLayout />}>
