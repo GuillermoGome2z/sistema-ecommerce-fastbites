@@ -1,12 +1,56 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronRight, Star, Truck, Clock } from 'lucide-react';
 import FeaturedProducts from '../components/FeaturedProducts';
 import CategoryCard from '../components/CategoryCard';
-import { PRODUCTOS_MOCK, CATEGORIAS } from '../data/productos.mock';
-import type { Categoria } from '../types/product.types';
+import { CATEGORIAS } from '../data/productos.mock';
+import type { Categoria, Producto } from '../types/product.types';
+import { API_BASE_URL } from '../../../config/api';
+
+interface BackendProducto {
+  ProductoId: number;
+  Nombre: string;
+  Descripcion: string;
+  PrecioBase: number;
+  Categoria: string;
+  EsDestacado: number | boolean;
+  Activo: number | boolean;
+}
+
+const IMAGEN_CATEGORIA: Record<string, string> = {
+  Desayuno: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+  Almuerzo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+  Cena:     'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+};
+
+const CALORIAS_CATEGORIA: Record<string, number> = { Desayuno: 450, Almuerzo: 650, Cena: 750 };
+const TIEMPO_CATEGORIA: Record<string, number>   = { Desayuno: 10,  Almuerzo: 15,  Cena: 20  };
+
+function adaptar(p: BackendProducto): Producto {
+  return {
+    id: p.ProductoId,
+    nombre: p.Nombre,
+    descripcion: p.Descripcion ?? '',
+    precioBase: p.PrecioBase,
+    categoria: p.Categoria as Categoria,
+    imagen: IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
+    calorias: CALORIAS_CATEGORIA[p.Categoria] ?? 500,
+    tiempoPreparacion: TIEMPO_CATEGORIA[p.Categoria] ?? 12,
+    esDestacado: Boolean(p.EsDestacado),
+    activo: Boolean(p.Activo),
+  };
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [productos, setProductos] = useState<Producto[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/products`)
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setProductos(json.data.map(adaptar)); })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,7 +163,7 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
           {CATEGORIAS.map((cat) => {
-            const conteo = PRODUCTOS_MOCK.filter((p) => p.categoria === cat && p.activo).length;
+            const conteo = productos.filter((p) => p.categoria === cat && p.activo).length;
             return (
               <CategoryCard
                 key={cat}
@@ -135,7 +179,7 @@ export default function HomePage() {
 
       {/* Featured Products */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FeaturedProducts />
+        <FeaturedProducts productos={productos} />
       </div>
 
       {/* CTA Banner */}

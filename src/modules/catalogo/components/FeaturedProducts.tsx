@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { PRODUCTOS_MOCK } from '../data/productos.mock';
+import type { Producto } from '../types/product.types';
 import ProductCard from './ProductCard';
 
-export default function FeaturedProducts() {
-  const destacados = PRODUCTOS_MOCK.filter((p) => p.esDestacado && p.activo);
+interface Props {
+  productos: Producto[];
+}
+
+export default function FeaturedProducts({ productos }: Props) {
+  const destacados = productos.filter((p) => p.esDestacado && p.activo);
 
   return (
     <section className="py-16">
