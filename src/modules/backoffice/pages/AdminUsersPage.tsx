@@ -5,6 +5,7 @@ import AdminTable from '../components/AdminTable';
 import StatusBadge from '../components/StatusBadge';
 import ActionButton from '../components/ActionButton';
 import type { AdminUser } from '../types/backoffice.types';
+import { API_BASE_URL } from '../../../config/api';
 
 const ROL_COLORS: Record<string, string> = {
   Administrador: 'bg-purple-50 text-purple-700',
@@ -26,7 +27,7 @@ export default function AdminUsersPage() {
       setError(null);
       try {
         const token = localStorage.getItem('fb_token');
-        const res = await fetch('http://localhost:3000/api/admin/users', {
+        const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -50,7 +51,7 @@ export default function AdminUsersPage() {
   const toggleActive = async (id: number) => {
     try {
       const token = localStorage.getItem('fb_token');
-      const res = await fetch(`http://localhost:3000/api/admin/users/${id}/toggle`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${id}/toggle`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,

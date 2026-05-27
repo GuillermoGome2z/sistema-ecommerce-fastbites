@@ -104,7 +104,7 @@ export async function adminGetOrderById(req: Request, res: Response): Promise<vo
       .request()
       .input('pedidoId', sql.Int, pedidoId)
       .query<{
-        PedidoId: number; ClienteId: number; NombreCliente: string;
+        PedidoId: number; ClienteId: number; NombreCliente: string; ClienteEmail: string;
         Estado: string; TipoEntrega: string; FechaPedido: Date; Notas: string | null;
         Subtotal: number; Descuento: number; CostoEnvio: number; Total: number;
         RestauranteId: number; NombreRestaurante: string;
@@ -116,6 +116,7 @@ export async function adminGetOrderById(req: Request, res: Response): Promise<vo
         SELECT
           p.PedidoId,    p.ClienteId,
           c.Nombre + ' ' + c.Apellido  AS NombreCliente,
+          u.Email                      AS ClienteEmail,
           p.Estado,      p.TipoEntrega, p.FechaPedido, p.Notas,
           p.Subtotal,    p.Descuento,   p.CostoEnvio,  p.Total,
           r.RestauranteId, r.Nombre                   AS NombreRestaurante,
@@ -127,6 +128,7 @@ export async function adminGetOrderById(req: Request, res: Response): Promise<vo
           tp.Nombre                                   AS NombreTipoPago
         FROM       Pedidos           p
         INNER JOIN Clientes          c  ON c.ClienteId     = p.ClienteId
+        INNER JOIN Usuarios          u  ON u.UsuarioId     = c.UsuarioId
         INNER JOIN Restaurantes      r  ON r.RestauranteId = p.RestauranteId
         LEFT  JOIN DireccionesCliente d  ON d.DireccionId   = p.DireccionId
         LEFT  JOIN Pagos              pg ON pg.PedidoId      = p.PedidoId
@@ -169,6 +171,7 @@ export async function adminGetOrderById(req: Request, res: Response): Promise<vo
         pedidoId:      pedido.PedidoId,
         clienteId:     pedido.ClienteId,
         nombreCliente: pedido.NombreCliente,
+        clienteEmail:  pedido.ClienteEmail,
         estado:        pedido.Estado,
         tipoEntrega:   pedido.TipoEntrega,
         fechaPedido:   pedido.FechaPedido,

@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
 import type { CartItem, Address, PaymentMethod, CartTotals, LastOrder, PaymentType } from './types/cart.types';
-import { CARRITO_MOCK } from './data/carrito.mock';
 import { DIRECCIONES_MOCK } from './data/direcciones.mock';
 import { METODOS_PAGO_MOCK } from './data/metodosPago.mock';
 import { API_BASE_URL } from '../../config/api';
@@ -57,6 +56,38 @@ function adaptarDireccion(d: BackendAddress): Address {
   };
 }
 
+interface BackendCartItem {
+  carritoDetalleId: number;
+  productoId:       number;
+  nombreProducto:   string;
+  tamanioId:        number | null;
+  nombreTamanio:    string | null;
+  cantidad:         number;
+  precioUnitario:   number;
+  subtotalItem:     number;
+  notas:            string | null;
+}
+
+function adaptarCartItem(i: BackendCartItem): CartItem {
+  return {
+    id:              String(i.carritoDetalleId),
+    producto: {
+      id:         i.productoId,
+      nombre:     i.nombreProducto,
+      imagen:     '',
+      precioBase: i.precioUnitario,
+      categoria:  '',
+    },
+    cantidad:        i.cantidad,
+    personalizacion: {
+      tamano: i.nombreTamanio ?? undefined,
+      notas:  i.notas ?? undefined,
+    },
+    precioUnitario:  i.precioUnitario,
+    subtotal:        i.subtotalItem,
+  };
+}
+
 function adaptarMetodoPago(m: BackendPaymentMethod): PaymentMethod {
   const tipo: PaymentType = m.NombreTipo.toLowerCase().includes('tarjeta') ? 'tarjeta' : 'efectivo';
   return {
@@ -73,7 +104,7 @@ function adaptarMetodoPago(m: BackendPaymentMethod): PaymentMethod {
 const CarritoContext = createContext<CarritoContextType | null>(null);
 
 export function CarritoProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(CARRITO_MOCK);
+  const [items, setItems] = useState<CartItem[]>([]);
   const [direcciones, setDirecciones] = useState<Address[]>(DIRECCIONES_MOCK);
   const [metodosPago, setMetodosPago] = useState<PaymentMethod[]>(METODOS_PAGO_MOCK);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(
@@ -84,7 +115,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
   );
   const [lastOrder, setLastOrder] = useState<LastOrder | null>(null);
 
-  // Load real addresses and payment methods if user is authenticated
+  // Load cart, addresses, and payment methods if user is authenticated
   useEffect(() => {
     const token = localStorage.getItem('fb_token');
     if (!token) return;
@@ -92,10 +123,14 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     const headers: HeadersInit = { Authorization: `Bearer ${token}` };
 
     Promise.all([
+      fetch(`${API_BASE_URL}/api/cart`, { headers }).then((r) => r.json()),
       fetch(`${API_BASE_URL}/api/customers/me/addresses`, { headers }).then((r) => r.json()),
       fetch(`${API_BASE_URL}/api/customers/me/payment-methods`, { headers }).then((r) => r.json()),
     ])
-      .then(([addrJson, payJson]) => {
+      .then(([cartJson, addrJson, payJson]) => {
+        if (cartJson.success && Array.isArray(cartJson.data.items) && cartJson.data.items.length > 0) {
+          setItems((cartJson.data.items as BackendCartItem[]).map(adaptarCartItem));
+        }
         if (addrJson.success && Array.isArray(addrJson.data) && addrJson.data.length > 0) {
           const adapted = (addrJson.data as BackendAddress[]).map(adaptarDireccion);
           setDirecciones(adapted);

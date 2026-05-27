@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, CreditCard, Store, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Store, Check, Loader } from 'lucide-react';
 import AdminLayout from '../components/AdminLayout';
 import StatusBadge from '../components/StatusBadge';
-import { ADMIN_PEDIDOS_MOCK } from '../data/adminPedidos.mock';
 import type { AdminOrderStatus } from '../types/backoffice.types';
+import { API_BASE_URL } from '../../../config/api';
 
 const STATUS_FLOW: AdminOrderStatus[] = ['Pendiente', 'Confirmado', 'EnPreparacion', 'EnCamino', 'Entregado'];
 const STATUS_LABELS: Record<AdminOrderStatus, string> = {
@@ -15,13 +15,120 @@ const STATUS_EMOJIS: Record<AdminOrderStatus, string> = {
   Pendiente: '🕐', Confirmado: '✅', EnPreparacion: '👨‍🍳', EnCamino: '🛵', Entregado: '🏠', Cancelado: '❌',
 };
 
-export default function AdminOrderDetailPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const found = ADMIN_PEDIDOS_MOCK.find((o) => o.id === id);
-  const [order, setOrder] = useState(found ?? null);
+interface OrderDetail {
+  pedidoId: number;
+  numeroPedido: string;
+  nombreCliente: string;
+  clienteEmail: string;
+  estado: AdminOrderStatus;
+  tipoEntrega: string;
+  fechaPedido: string;
+  restaurante: string;
+  direccionEntrega: string;
+  metodoPago: string;
+  subtotal: number;
+  descuento: number;
+  envio: number;
+  total: number;
+  items: {
+    nombre: string;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    personalizacion?: { tamano?: string; notas?: string };
+  }[];
+}
 
-  if (!order) {
+function adaptarDetalle(data: Record<string, unknown>): OrderDetail {
+  const fecha   = new Date(data.fechaPedido as string);
+  const dateStr = fecha.toISOString().slice(0, 10).replace(/-/g, '');
+  const id      = data.pedidoId as number;
+  const totales = data.totales as Record<string, number>;
+  const dir     = data.direccion as Record<string, string> | null;
+  const rest    = data.restaurante as Record<string, string>;
+  const pago    = data.pago as Record<string, string> | null;
+  const rawItems = data.items as Record<string, unknown>[];
+
+  return {
+    pedidoId:        id,
+    numeroPedido:    `FB-${dateStr}-${String(id).padStart(3, '0')}`,
+    nombreCliente:   data.nombreCliente as string,
+    clienteEmail:    data.clienteEmail as string ?? '',
+    estado:          data.estado as AdminOrderStatus,
+    tipoEntrega:     data.tipoEntrega as string,
+    fechaPedido:     data.fechaPedido as string,
+    restaurante:     rest.nombre,
+    direccionEntrega: dir
+      ? `${dir.calle ?? ''}, ${dir.ciudad ?? ''}`
+      : (data.tipoEntrega === 'Recoger' ? 'Recoger en tienda' : '—'),
+    metodoPago:  pago?.tipoPago ?? '—',
+    subtotal:    totales.subtotal,
+    descuento:   totales.descuento,
+    envio:       totales.costoEnvio,
+    total:       totales.total,
+    items: rawItems.map((i) => ({
+      nombre:          i.nombreProducto as string,
+      cantidad:        i.cantidad as number,
+      precioUnitario:  i.precioUnitario as number,
+      subtotal:        i.subtotalItem as number,
+      personalizacion: (i.nombreTamanio || i.notas)
+        ? { tamano: (i.nombreTamanio as string) ?? undefined, notas: (i.notas as string) ?? undefined }
+        : undefined,
+    })),
+  };
+}
+
+export default function AdminOrderDetailPage() {
+  const { id }  = useParams();
+  const navigate = useNavigate();
+
+  const [order, setOrder]     = useState<OrderDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const headers = () => ({
+    Authorization: `Bearer ${localStorage.getItem('fb_token') ?? ''}`,
+    'Content-Type': 'application/json',
+  });
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/admin/orders/${id}`, { headers: headers() })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) setOrder(adaptarDetalle(json.data));
+        else setNotFound(true);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const changeStatus = (status: AdminOrderStatus) => {
+    if (!id) return;
+    fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ estado: status }),
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) setOrder((prev) => prev ? { ...prev, estado: status } : null);
+      })
+      .catch(() => {});
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout title="Pedido">
+        <div className="flex items-center justify-center py-20">
+          <Loader className="w-8 h-8 text-orange-500 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (notFound || !order) {
     return (
       <AdminLayout title="Pedido no encontrado">
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -33,11 +140,8 @@ export default function AdminOrderDetailPage() {
     );
   }
 
-  const currentIdx = STATUS_FLOW.indexOf(order.estado as AdminOrderStatus);
+  const currentIdx  = STATUS_FLOW.indexOf(order.estado);
   const isCancelled = order.estado === 'Cancelado';
-
-  const changeStatus = (status: AdminOrderStatus) =>
-    setOrder((prev) => prev ? { ...prev, estado: status } : null);
 
   return (
     <AdminLayout title={`Pedido #${order.numeroPedido}`}>
@@ -47,7 +151,7 @@ export default function AdminOrderDetailPage() {
             <ArrowLeft size={15} /> Volver
           </button>
           <span className="text-gray-400">·</span>
-          <span className="text-sm text-gray-500">{new Date(order.fecha).toLocaleString('es-MX')}</span>
+          <span className="text-sm text-gray-500">{new Date(order.fechaPedido).toLocaleString('es-MX')}</span>
           <StatusBadge status={order.estado} />
         </div>
 
@@ -57,7 +161,7 @@ export default function AdminOrderDetailPage() {
             <h2 className="font-extrabold text-gray-900 mb-5">Progreso del pedido</h2>
             <div className="flex items-center">
               {STATUS_FLOW.map((status, i) => {
-                const isDone = i <= currentIdx;
+                const isDone   = i <= currentIdx;
                 const isActive = i === currentIdx;
                 return (
                   <div key={status} className="flex items-center flex-1">
@@ -94,7 +198,6 @@ export default function AdminOrderDetailPage() {
                       {item.personalizacion && (
                         <div className="flex gap-1.5 mt-1 flex-wrap">
                           {item.personalizacion.tamano && <span className="text-xs bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full">{item.personalizacion.tamano}</span>}
-                          {item.personalizacion.bebida && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">🥤 {item.personalizacion.bebida}</span>}
                           {item.personalizacion.notas && <span className="text-xs bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full italic">"{item.personalizacion.notas}"</span>}
                         </div>
                       )}
@@ -118,7 +221,11 @@ export default function AdminOrderDetailPage() {
               <div className="flex gap-2.5 text-sm"><MapPin size={14} className="text-orange-400 mt-0.5 flex-shrink-0" /><div><p className="text-xs text-gray-400 mb-0.5">Entrega en</p><p className="text-gray-700">{order.direccionEntrega}</p></div></div>
               <div className="flex gap-2.5 text-sm"><CreditCard size={14} className="text-orange-400 mt-0.5 flex-shrink-0" /><div><p className="text-xs text-gray-400 mb-0.5">Método de pago</p><p className="text-gray-700">{order.metodoPago}</p></div></div>
               <div className="flex gap-2.5 text-sm"><Store size={14} className="text-orange-400 mt-0.5 flex-shrink-0" /><div><p className="text-xs text-gray-400 mb-0.5">Restaurante</p><p className="text-gray-700">{order.restaurante}</p></div></div>
-              <div className="border-t border-gray-100 pt-3"><p className="text-xs text-gray-400 mb-0.5">Cliente</p><p className="font-semibold text-gray-800 text-sm">{order.clienteNombre}</p><p className="text-gray-400 text-xs">{order.clienteEmail}</p></div>
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs text-gray-400 mb-0.5">Cliente</p>
+                <p className="font-semibold text-gray-800 text-sm">{order.nombreCliente}</p>
+                {order.clienteEmail && <p className="text-gray-400 text-xs">{order.clienteEmail}</p>}
+              </div>
             </div>
 
             {!isCancelled && order.estado !== 'Entregado' && (

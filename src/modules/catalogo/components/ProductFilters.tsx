@@ -1,13 +1,19 @@
-import type { Categoria } from '../types/product.types';
+import type { Categoria, Producto } from '../types/product.types';
 import { PRODUCTOS_MOCK, CATEGORIAS } from '../data/productos.mock';
 
 interface Props {
   categoriaActiva: Categoria | 'Todos';
   onChange: (cat: Categoria | 'Todos') => void;
+  productos?: Producto[];
 }
 
-export default function ProductFilters({ categoriaActiva, onChange }: Props) {
-  const totalActivos = PRODUCTOS_MOCK.filter((p) => p.activo).length;
+export default function ProductFilters({ categoriaActiva, onChange, productos }: Props) {
+  const lista      = productos ?? PRODUCTOS_MOCK;
+  const categorias = productos
+    ? ([...new Set(productos.map((p) => p.categoria))].sort() as Categoria[])
+    : CATEGORIAS;
+
+  const totalActivos = lista.filter((p) => p.activo).length;
 
   return (
     <div className="flex flex-wrap gap-3 mb-8">
@@ -22,8 +28,8 @@ export default function ProductFilters({ categoriaActiva, onChange }: Props) {
         Todos ({totalActivos})
       </button>
 
-      {CATEGORIAS.map((cat) => {
-        const conteo = PRODUCTOS_MOCK.filter((p) => p.categoria === cat && p.activo).length;
+      {categorias.map((cat) => {
+        const conteo = lista.filter((p) => p.categoria === cat && p.activo).length;
         return (
           <button
             key={cat}
