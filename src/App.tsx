@@ -1,7 +1,7 @@
-import ReportesPreview from './modules/reportes/ReportesPreview'
+import AppRoutes from './routes/AppRoutes'
 
 function App() {
-  return <ReportesPreview />
+  return <AppRoutes />
 }
 
 export default App

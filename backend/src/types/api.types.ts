@@ -20,6 +20,7 @@ export interface UsuarioRow {
   Activo: boolean;
   IntentosFallidosLogin: number;
   BloqueadoHasta: Date | null;
+  EmailVerificado: boolean;
 }
 
 // ─── Enums de dominio (valores exactos de los CHECK de la BD) ──
