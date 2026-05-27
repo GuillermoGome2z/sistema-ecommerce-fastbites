@@ -1,25 +1,88 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Home, ChevronRight } from 'lucide-react';
-import type { Categoria } from '../types/product.types';
-import { PRODUCTOS_MOCK } from '../data/productos.mock';
+import type { Categoria, Producto } from '../types/product.types';
 import ProductFilters from '../components/ProductFilters';
 import ProductGrid from '../components/ProductGrid';
+import { API_BASE_URL } from '../../../config/api';
+
+interface BackendProducto {
+  ProductoId: number;
+  Nombre: string;
+  Descripcion: string;
+  PrecioBase: number;
+  Categoria: string;
+  EsDestacado: number | boolean;
+  Activo: number | boolean;
+}
+
+const IMAGEN_CATEGORIA: Record<string, string> = {
+  Desayuno: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+  Almuerzo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+  Cena:     'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+};
+
+const CALORIAS_CATEGORIA: Record<string, number> = { Desayuno: 450, Almuerzo: 650, Cena: 750 };
+const TIEMPO_CATEGORIA: Record<string, number>   = { Desayuno: 10,  Almuerzo: 15,  Cena: 20  };
+
+function adaptar(p: BackendProducto): Producto {
+  return {
+    id: p.ProductoId,
+    nombre: p.Nombre,
+    descripcion: p.Descripcion ?? '',
+    precioBase: p.PrecioBase,
+    categoria: p.Categoria as Categoria,
+    imagen: IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
+    calorias: CALORIAS_CATEGORIA[p.Categoria] ?? 500,
+    tiempoPreparacion: TIEMPO_CATEGORIA[p.Categoria] ?? 12,
+    esDestacado: Boolean(p.EsDestacado),
+    activo: Boolean(p.Activo),
+  };
+}
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
   const [categoriaActiva, setCategoriaActiva] = useState<Categoria | 'Todos'>('Todos');
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const cat = searchParams.get('categoria') as Categoria | null;
     if (cat) setCategoriaActiva(cat);
   }, [searchParams]);
 
-  const productosFiltrados = PRODUCTOS_MOCK.filter((p) => {
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/products`)
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setProductos(json.data.map(adaptar)); })
+      .catch(() => setError('No se pudo cargar el menú. Verifica que el backend esté corriendo.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const productosFiltrados = productos.filter((p) => {
     if (!p.activo) return false;
     if (categoriaActiva === 'Todos') return true;
     return p.categoria === categoriaActiva;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Cargando menú...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-6 py-4 rounded-2xl max-w-md text-center">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
