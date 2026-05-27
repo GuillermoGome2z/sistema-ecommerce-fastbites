@@ -27,6 +27,7 @@ export const PEDIDOS_MOCK: Order[] = [
     },
     metodoPago: {
       id: 1,
+      tipoPagoId: 1,
       tipo: 'tarjeta',
       alias: 'Visa principal',
       ultimosDigitos: '4242',
@@ -59,7 +60,7 @@ export const PEDIDOS_MOCK: Order[] = [
       codigoPostal: '06600',
       esPrincipal: false,
     },
-    metodoPago: { id: 3, tipo: 'efectivo', alias: 'Efectivo contra entrega', esPrincipal: false },
+    metodoPago: { id: 3, tipoPagoId: 2, tipo: 'efectivo', alias: 'Efectivo contra entrega', esPrincipal: false },
     totales: { subtotal: 37.98, descuento: 3.8, envio: 0, total: 34.18 },
   },
   {
@@ -88,6 +89,7 @@ export const PEDIDOS_MOCK: Order[] = [
     },
     metodoPago: {
       id: 1,
+      tipoPagoId: 1,
       tipo: 'tarjeta',
       alias: 'Visa principal',
       ultimosDigitos: '4242',
@@ -116,6 +118,7 @@ export const PEDIDOS_MOCK: Order[] = [
     },
     metodoPago: {
       id: 2,
+      tipoPagoId: 1,
       tipo: 'tarjeta',
       alias: 'Mastercard',
       ultimosDigitos: '8888',
@@ -145,6 +148,7 @@ export const PEDIDOS_MOCK: Order[] = [
     },
     metodoPago: {
       id: 1,
+      tipoPagoId: 1,
       tipo: 'tarjeta',
       alias: 'Visa principal',
       ultimosDigitos: '4242',

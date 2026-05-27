@@ -53,6 +53,7 @@ export interface Address {
 
 export interface PaymentMethod {
   id: number;
+  tipoPagoId: number;
   tipo: PaymentType;
   alias: string;
   ultimosDigitos?: string;
