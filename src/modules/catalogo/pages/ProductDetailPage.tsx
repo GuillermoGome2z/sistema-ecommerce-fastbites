@@ -1,18 +1,90 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Flame, ShoppingCart, Tag, Star } from 'lucide-react';
-import { PRODUCTOS_MOCK } from '../data/productos.mock';
+import type { Categoria, Producto } from '../types/product.types';
+import { API_BASE_URL } from '../../../config/api';
+
+interface BackendProductoBase {
+  ProductoId: number;
+  Nombre: string;
+  Descripcion?: string;
+  PrecioBase: number;
+  Categoria: string;
+  EsDestacado: number | boolean;
+  Activo?: number | boolean;
+}
+
+interface BackendProductoDetalle extends BackendProductoBase {
+  RestauranteId: number;
+  Calorias?: number;
+  TiempoPreparacion?: number;
+  relacionados: BackendProductoBase[];
+}
+
+const IMAGEN_CATEGORIA: Record<string, string> = {
+  Desayuno: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+  Almuerzo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+  Cena:     'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+};
+
+const CALORIAS_CATEGORIA: Record<string, number>  = { Desayuno: 450, Almuerzo: 650, Cena: 750 };
+const TIEMPO_CATEGORIA: Record<string, number>    = { Desayuno: 10,  Almuerzo: 15,  Cena: 20  };
+
+function adaptar(p: BackendProductoBase): Producto {
+  return {
+    id: p.ProductoId,
+    nombre: p.Nombre,
+    descripcion: p.Descripcion ?? '',
+    precioBase: p.PrecioBase,
+    categoria: p.Categoria as Categoria,
+    imagen: IMAGEN_CATEGORIA[p.Categoria] ?? IMAGEN_CATEGORIA['Almuerzo'],
+    calorias: (p as BackendProductoDetalle).Calorias || (CALORIAS_CATEGORIA[p.Categoria] ?? 500),
+    tiempoPreparacion: (p as BackendProductoDetalle).TiempoPreparacion || (TIEMPO_CATEGORIA[p.Categoria] ?? 12),
+    esDestacado: Boolean(p.EsDestacado),
+    activo: Boolean(p.Activo ?? true),
+  };
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const producto = PRODUCTOS_MOCK.find((p) => p.id === Number(id));
+  const [producto, setProducto] = useState<Producto | null>(null);
+  const [relacionados, setRelacionados] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  if (!producto) {
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError('');
+    fetch(`${API_BASE_URL}/api/products/${id}`)
+      .then((r) => r.json())
+      .then((json: { success: boolean; message?: string; data?: BackendProductoDetalle }) => {
+        if (!json.success || !json.data) {
+          setError(json.message ?? 'Producto no encontrado');
+          return;
+        }
+        setProducto(adaptar(json.data));
+        setRelacionados((json.data.relacionados ?? []).map(adaptar));
+      })
+      .catch(() => setError('No se pudo conectar con el servidor.'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Cargando producto...</p>
+      </div>
+    );
+  }
+
+  if (error || !producto) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 text-center px-4">
         <p className="text-7xl">🍽️</p>
         <h2 className="text-2xl font-extrabold text-gray-800">Producto no encontrado</h2>
-        <p className="text-gray-500">El producto que buscas no existe o fue removido.</p>
+        <p className="text-gray-500">{error || 'El producto que buscas no existe o fue removido.'}</p>
         <Link
           to="/productos"
           className="mt-2 inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
@@ -23,10 +95,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const relacionados = PRODUCTOS_MOCK.filter(
-    (p) => p.categoria === producto.categoria && p.id !== producto.id && p.activo
-  ).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-gray-50">
