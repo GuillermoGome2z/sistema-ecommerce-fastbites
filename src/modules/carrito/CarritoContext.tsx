@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
 import type { CartItem, Address, PaymentMethod, CartTotals, LastOrder, PaymentType } from './types/cart.types';
-import { DIRECCIONES_MOCK } from './data/direcciones.mock';
-import { METODOS_PAGO_MOCK } from './data/metodosPago.mock';
 import { API_BASE_URL } from '../../config/api';
+import CartAddedToast from './components/CartAddedToast';
 
 interface CarritoContextType {
   items: CartItem[];
@@ -15,7 +14,7 @@ interface CarritoContextType {
   incrementar: (id: string) => void;
   decrementar: (id: string) => void;
   eliminar: (id: string) => void;
-  agregarAlCarrito: (productoId: number, cantidad?: number) => Promise<void>;
+  agregarAlCarrito: (productoId: number, cantidad?: number, nombre?: string) => Promise<void>;
   setSelectedAddress: (a: Address) => void;
   setSelectedPayment: (p: PaymentMethod) => void;
   confirmarPedido: () => Promise<string>;
@@ -106,15 +105,12 @@ const CarritoContext = createContext<CarritoContextType | null>(null);
 
 export function CarritoProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [direcciones, setDirecciones] = useState<Address[]>(DIRECCIONES_MOCK);
-  const [metodosPago, setMetodosPago] = useState<PaymentMethod[]>(METODOS_PAGO_MOCK);
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(
-    DIRECCIONES_MOCK.find((d) => d.esPrincipal) ?? null
-  );
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(
-    METODOS_PAGO_MOCK.find((m) => m.esPrincipal) ?? null
-  );
+  const [direcciones, setDirecciones] = useState<Address[]>([]);
+  const [metodosPago, setMetodosPago] = useState<PaymentMethod[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
   const [lastOrder, setLastOrder] = useState<LastOrder | null>(null);
+  const [cartToast, setCartToast] = useState<{ nombre: string } | null>(null);
 
   // Load cart, addresses, and payment methods if user is authenticated
   useEffect(() => {
@@ -190,7 +186,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const agregarAlCarrito = async (productoId: number, cantidad: number = 1): Promise<void> => {
+  const agregarAlCarrito = async (productoId: number, cantidad: number = 1, nombre?: string): Promise<void> => {
     const token = localStorage.getItem('fb_token');
     if (!token) throw new Error('Debes iniciar sesión para agregar al carrito.');
 
@@ -212,6 +208,8 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     if (cartJson.success && Array.isArray(cartJson.data?.items)) {
       setItems((cartJson.data.items as BackendCartItem[]).map(adaptarCartItem));
     }
+
+    if (nombre) setCartToast({ nombre });
   };
 
   const confirmarPedido = async (): Promise<string> => {
@@ -292,6 +290,12 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {cartToast && (
+        <CartAddedToast
+          nombre={cartToast.nombre}
+          onClose={() => setCartToast(null)}
+        />
+      )}
     </CarritoContext.Provider>
   );
 }
