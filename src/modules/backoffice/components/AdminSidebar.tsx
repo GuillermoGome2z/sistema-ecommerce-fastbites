@@ -1,18 +1,31 @@
 import { NavLink, Link } from 'react-router-dom';
+import { useAuth } from '../../auth/context/AuthContext';
 import {
   LayoutDashboard, Users, Shield, Store, UtensilsCrossed,
-  Clock, Tag, ShoppingBag, X, ArrowLeft
+  Clock, Tag, ShoppingBag, X, ArrowLeft, BarChart2,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { label: 'Dashboard',    icon: LayoutDashboard,  path: '/admin',             end: true },
-  { label: 'Usuarios',     icon: Users,             path: '/admin/users' },
-  { label: 'Roles',        icon: Shield,            path: '/admin/roles' },
-  { label: 'Restaurantes', icon: Store,             path: '/admin/restaurants' },
-  { label: 'Productos',    icon: UtensilsCrossed,   path: '/admin/products' },
-  { label: 'Dayparts',     icon: Clock,             path: '/admin/dayparts' },
-  { label: 'Ofertas',      icon: Tag,               path: '/admin/offers' },
-  { label: 'Pedidos',      icon: ShoppingBag,       path: '/admin/orders' },
+interface NavItem {
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  end?: boolean;
+  allowedRoles: string[];
+}
+
+const ALL_ADMIN = ['Administrador', 'EmpleadoBackoffice', 'Supervisor'];
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard',    icon: LayoutDashboard, path: '/admin',             end: true, allowedRoles: ALL_ADMIN },
+  { label: 'Usuarios',     icon: Users,           path: '/admin/users',                 allowedRoles: ['Administrador'] },
+  { label: 'Roles',        icon: Shield,          path: '/admin/roles',                 allowedRoles: ['Administrador'] },
+  { label: 'Restaurantes', icon: Store,           path: '/admin/restaurants',           allowedRoles: ALL_ADMIN },
+  { label: 'Productos',    icon: UtensilsCrossed, path: '/admin/products',              allowedRoles: ALL_ADMIN },
+  { label: 'Dayparts',     icon: Clock,           path: '/admin/dayparts',              allowedRoles: ['Administrador', 'EmpleadoBackoffice'] },
+  { label: 'Ofertas',      icon: Tag,             path: '/admin/offers',                allowedRoles: ALL_ADMIN },
+  { label: 'Pedidos',      icon: ShoppingBag,     path: '/admin/orders',                allowedRoles: ALL_ADMIN },
+  { label: 'Reportes',     icon: BarChart2,       path: '/admin/reportes',              allowedRoles: ['Administrador', 'Supervisor'] },
 ];
 
 interface Props {
@@ -21,6 +34,20 @@ interface Props {
 }
 
 export default function AdminSidebar({ open, onClose }: Props) {
+  const { user } = useAuth();
+  const userRoles = user?.roles ?? [];
+
+  const visibleItems = NAV_ITEMS.filter(item =>
+    item.allowedRoles.some(r => userRoles.includes(r))
+  );
+
+  const initials = (user?.nombreCompleto ?? 'A')
+    .split(' ')
+    .map(n => n[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <>
       {open && (
@@ -56,7 +83,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -84,14 +111,14 @@ export default function AdminSidebar({ open, onClose }: Props) {
             <ArrowLeft size={14} />
             Salir a Portal Cliente
           </Link>
-          
+
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-              A
+              {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-white text-xs font-semibold truncate">Ana García</p>
-              <p className="text-gray-500 text-xs">Administrador</p>
+              <p className="text-white text-xs font-semibold truncate">{user?.nombreCompleto ?? 'Usuario'}</p>
+              <p className="text-gray-500 text-xs">{userRoles[0] ?? 'Admin'}</p>
             </div>
           </div>
         </div>

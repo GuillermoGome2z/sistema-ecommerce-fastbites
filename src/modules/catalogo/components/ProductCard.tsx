@@ -20,7 +20,7 @@ export default function ProductCard({ producto }: Props) {
     setAdding(true);
     setAddError('');
     try {
-      await agregarAlCarrito(producto.id);
+      await agregarAlCarrito(producto.id, 1, producto.nombre);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (err) {

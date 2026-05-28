@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, ShieldCheck, MapPin, CreditCard } from 'lucide-react';
 import type { CheckoutStep } from '../types/cart.types';
 import { useCarrito } from '../CarritoContext';
 import CheckoutSteps from '../components/CheckoutSteps';
@@ -62,7 +62,11 @@ export default function CheckoutPage() {
         const numero = await confirmarPedido();
         navigate(`/confirmacion/${numero}`);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al confirmar el pedido. Intenta de nuevo.');
+        const raw = err instanceof Error ? err.message : '';
+        const msg = raw === 'Failed to fetch' || raw.includes('NetworkError') || raw.includes('fetch')
+          ? 'No se pudo conectar con el servidor. Verifica que el servicio esté activo e intenta de nuevo.'
+          : raw || 'Error al confirmar el pedido. Intenta de nuevo.';
+        setError(msg);
       } finally {
         setConfirming(false);
       }
@@ -158,33 +162,65 @@ export default function CheckoutPage() {
 
               {step === 'direccion' && (
                 <div className="space-y-3">
-                  {direcciones.map((dir) => (
-                    <AddressCard
-                      key={dir.id}
-                      direccion={dir}
-                      seleccionada={selectedAddress?.id === dir.id}
-                      onSelect={() => {
-                        setSelectedAddress(dir);
-                        setError('');
-                      }}
-                    />
-                  ))}
+                  {direcciones.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+                      <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
+                        <MapPin size={22} className="text-orange-400" />
+                      </div>
+                      <p className="text-gray-600 font-semibold text-sm">No tienes direcciones registradas</p>
+                      <p className="text-gray-400 text-xs">Agrega una dirección desde tu perfil para continuar.</p>
+                      <Link
+                        to="/mis-direcciones"
+                        className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-xl transition-colors"
+                      >
+                        Ir a Mis Direcciones
+                      </Link>
+                    </div>
+                  ) : (
+                    direcciones.map((dir) => (
+                      <AddressCard
+                        key={dir.id}
+                        direccion={dir}
+                        seleccionada={selectedAddress?.id === dir.id}
+                        onSelect={() => {
+                          setSelectedAddress(dir);
+                          setError('');
+                        }}
+                      />
+                    ))
+                  )}
                 </div>
               )}
 
               {step === 'pago' && (
                 <div className="space-y-3">
-                  {metodosPago.map((mp) => (
-                    <PaymentMethodCard
-                      key={mp.id}
-                      metodo={mp}
-                      seleccionado={selectedPayment?.id === mp.id}
-                      onSelect={() => {
-                        setSelectedPayment(mp);
-                        setError('');
-                      }}
-                    />
-                  ))}
+                  {metodosPago.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+                      <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
+                        <CreditCard size={22} className="text-orange-400" />
+                      </div>
+                      <p className="text-gray-600 font-semibold text-sm">No tienes métodos de pago registrados</p>
+                      <p className="text-gray-400 text-xs">Agrega un método de pago desde tu perfil para continuar.</p>
+                      <Link
+                        to="/mis-metodos-pago"
+                        className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-xl transition-colors"
+                      >
+                        Ir a Mis Métodos de Pago
+                      </Link>
+                    </div>
+                  ) : (
+                    metodosPago.map((mp) => (
+                      <PaymentMethodCard
+                        key={mp.id}
+                        metodo={mp}
+                        seleccionado={selectedPayment?.id === mp.id}
+                        onSelect={() => {
+                          setSelectedPayment(mp);
+                          setError('');
+                        }}
+                      />
+                    ))
+                  )}
                 </div>
               )}
 

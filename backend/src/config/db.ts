@@ -4,7 +4,7 @@ import path   from 'path';
 // Carga .env desde el directorio de trabajo (backend/) — no depende de __dirname
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 
-import sql from 'mssql/msnodesqlv8';
+import sql from 'mssql';
 
 const primaryServer = process.env.DB_SERVER;
 const targetDb      = process.env.DB_DATABASE ?? 'FastBitesDB';

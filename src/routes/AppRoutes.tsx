@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { CarritoProvider } from '../modules/carrito/CarritoContext';
 import { AuthProvider } from '../modules/auth/context/AuthContext';
+import RequireRole from './RequireRole';
 
 // Auth — páginas creadas
 import LoginPage           from '../modules/auth/pages/LoginPage';
@@ -84,18 +85,32 @@ export default function AppRoutes() {
           {/* Rutas de admin — con AdminLayout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index              element={<AdminDashboardPage />} />
-            <Route path="users"       element={<AdminUsersPage />} />
-            <Route path="roles"       element={<AdminRolesPage />} />
+
+            {/* Solo Administrador */}
+            <Route element={<RequireRole allowedRoles={['Administrador']} />}>
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="roles" element={<AdminRolesPage />} />
+            </Route>
+
+            {/* Todos los roles admin */}
             <Route path="restaurants" element={<AdminRestaurantsPage />} />
             <Route path="products"    element={<AdminProductsPage />} />
-            <Route path="dayparts"    element={<AdminDaypartPage />} />
             <Route path="offers"      element={<AdminOffersPage />} />
             <Route path="orders"      element={<AdminOrdersPage />} />
             <Route path="orders/:id"  element={<AdminOrderDetailPage />} />
-            <Route path="reportes"              element={<ReportsDashboardPage />} />
-            <Route path="reportes/ventas-dia"     element={<SalesByDayPage />} />
-            <Route path="reportes/ventas-hora"    element={<SalesByHourPage />} />
-            <Route path="reportes/ventas-daypart" element={<SalesByDaypartPage />} />
+
+            {/* Administrador + EmpleadoBackoffice (no Supervisor) */}
+            <Route element={<RequireRole allowedRoles={['Administrador', 'EmpleadoBackoffice']} />}>
+              <Route path="dayparts" element={<AdminDaypartPage />} />
+            </Route>
+
+            {/* Administrador + Supervisor (no EmpleadoBackoffice) */}
+            <Route element={<RequireRole allowedRoles={['Administrador', 'Supervisor']} />}>
+              <Route path="reportes"                element={<ReportsDashboardPage />} />
+              <Route path="reportes/ventas-dia"     element={<SalesByDayPage />} />
+              <Route path="reportes/ventas-hora"    element={<SalesByHourPage />} />
+              <Route path="reportes/ventas-daypart" element={<SalesByDaypartPage />} />
+            </Route>
           </Route>
 
           {/* Fallback */}
