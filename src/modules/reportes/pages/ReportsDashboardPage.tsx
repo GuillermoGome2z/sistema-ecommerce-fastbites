@@ -81,6 +81,29 @@ export default function ReportsDashboardPage() {
     return Object.entries(map).map(([label, value]) => ({ label, value }));
   }, [ventasDaypart]);
 
+  const ventasPorRestaurante = useMemo(() => {
+    const map: Record<string, { ventas: number; pedidos: number }> = {};
+    ventasDia.forEach((r) => {
+      if (!r.Restaurante) return;
+      if (!map[r.Restaurante]) map[r.Restaurante] = { ventas: 0, pedidos: 0 };
+      map[r.Restaurante].ventas += r.TotalVentas;
+      map[r.Restaurante].pedidos += r.TotalPedidos;
+    });
+    return Object.entries(map)
+      .map(([nombre, t]) => ({
+        nombre,
+        ventas: t.ventas,
+        pedidos: t.pedidos,
+        ticketPromedio: t.pedidos > 0 ? t.ventas / t.pedidos : 0,
+      }))
+      .sort((a, b) => b.ventas - a.ventas);
+  }, [ventasDia]);
+
+  const chartRestaurante = useMemo(
+    () => ventasPorRestaurante.map((r) => ({ label: r.nombre, value: r.ventas })),
+    [ventasPorRestaurante],
+  );
+
   const h12 = summary.horaMasVentas > 12 ? summary.horaMasVentas - 12 : summary.horaMasVentas;
   const suffix = summary.horaMasVentas >= 12 ? 'PM' : 'AM';
 
@@ -103,7 +126,7 @@ export default function ReportsDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-7">
         <ReportHeader
           title="Dashboard de Reportes"
@@ -167,6 +190,54 @@ export default function ReportsDashboardPage() {
             </button>
           ))}
         </div>
+
+        {ventasPorRestaurante.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="font-extrabold text-gray-900 text-base">Ventas por Restaurante</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <ReportChartCard
+                title="Total de ventas por restaurante"
+                data={chartRestaurante}
+                color="orange"
+                formatValue={(v) => `$${v.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+              />
+              <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h3 className="font-bold text-gray-900 text-sm">Resumen comparativo</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Restaurante</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Pedidos</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Ventas</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket Prom.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ventasPorRestaurante.map((r, i) => (
+                        <tr key={r.nombre} className="border-b border-gray-50 last:border-0 hover:bg-orange-50/30 transition-colors">
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {i === 0 && <span className="mr-1.5">🏆</span>}
+                            {r.nombre}
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-600">{r.pedidos}</td>
+                          <td className="px-4 py-3 text-right font-bold text-orange-500">
+                            ${r.ventas.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-500">
+                            ${r.ticketPromedio.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

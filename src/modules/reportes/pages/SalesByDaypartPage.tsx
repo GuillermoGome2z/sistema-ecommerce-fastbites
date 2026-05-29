@@ -72,7 +72,7 @@ export default function SalesByDaypartPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <ReportHeader
           title="Ventas por Daypart"
