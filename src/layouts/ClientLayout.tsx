@@ -1,6 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../modules/auth/context/AuthContext';
-import { ShoppingBag, LogOut, User as UserIcon, Shield } from 'lucide-react';
+import { ShoppingBag, LogOut, User as UserIcon, Shield, ChevronDown, MapPin, CreditCard } from 'lucide-react';
 
 export default function ClientLayout() {
   const { user, logout } = useAuth();
@@ -13,6 +14,26 @@ export default function ClientLayout() {
   };
 
   const isAdmin = user && user.roles.some((r: string) => ['Administrador', 'Supervisor', 'EmpleadoBackoffice'].includes(r));
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const initials = (user?.nombreCompleto ?? '?')
+    .split(' ')
+    .map((n: string) => n[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col client-layout-shell">
@@ -67,18 +88,69 @@ export default function ClientLayout() {
               </Link>
 
               {user ? (
-                <div className="flex items-center gap-3 border-l border-gray-100 pl-3">
-                  <div className="hidden sm:block text-right">
-                    <p className="text-xs font-black text-gray-900 leading-tight">{user.nombreCompleto}</p>
-                    <p className="text-[10px] font-semibold text-gray-400 capitalize">{user.roles[0] || 'Cliente'}</p>
-                  </div>
+                <div ref={menuRef} className="relative border-l border-gray-100 pl-3">
                   <button
-                    onClick={handleLogout}
-                    title="Cerrar sesión"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    onClick={() => setMenuOpen((o) => !o)}
+                    className="flex items-center gap-2 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors"
                   >
-                    <LogOut size={18} />
+                    <div className="hidden sm:block text-right">
+                      <p className="text-xs font-black text-gray-900 leading-tight">{user.nombreCompleto}</p>
+                      <p className="text-[10px] font-semibold text-gray-400 capitalize">{user.roles[0] || 'Cliente'}</p>
+                    </div>
+                    <div className="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-orange-600 font-black text-xs">{initials}</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-gray-400 transition-transform flex-shrink-0 ${menuOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-lg border border-gray-100 py-1.5 z-50">
+                      <Link
+                        to="/mi-cuenta"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                      >
+                        <UserIcon size={15} />
+                        Mi Cuenta
+                      </Link>
+                      <Link
+                        to="/pedidos"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                      >
+                        <ShoppingBag size={15} />
+                        Mis Pedidos
+                      </Link>
+                      <Link
+                        to="/mis-direcciones"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                      >
+                        <MapPin size={15} />
+                        Mis Direcciones
+                      </Link>
+                      <Link
+                        to="/mis-metodos-pago"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                      >
+                        <CreditCard size={15} />
+                        Métodos de Pago
+                      </Link>
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button
+                          onClick={() => { setMenuOpen(false); handleLogout(); }}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut size={15} />
+                          Cerrar Sesión
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Link
