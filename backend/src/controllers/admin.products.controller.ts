@@ -54,10 +54,10 @@ export async function adminGetCategories(_req: Request, res: Response): Promise<
 }
 
 export async function adminCreateProduct(req: Request, res: Response): Promise<void> {
-  const { nombre, descripcion, precioBase, categoria, restauranteId, esDestacado, activo, calorias, tiempoPreparacion } = req.body as {
+  const { nombre, descripcion, precioBase, categoria, restauranteId, esDestacado, activo, calorias, tiempoPreparacion, imagen } = req.body as {
     nombre: string; descripcion?: string; precioBase: number; categoria: string;
     restauranteId: number; esDestacado?: boolean; activo?: boolean;
-    calorias?: number; tiempoPreparacion?: number;
+    calorias?: number; tiempoPreparacion?: number; imagen?: string;
   };
 
   if (!nombre || !precioBase || !categoria || !restauranteId) {
@@ -94,7 +94,19 @@ export async function adminCreateProduct(req: Request, res: Response): Promise<v
         VALUES (@restauranteId, @categoriaId, @nombre, @descripcion, @precioBase, @calorias, @tiempoPreparacion, @esDestacado, @activo)
       `);
 
-    res.status(201).json({ success: true, data: { id: insertResult.recordset[0].ProductoId } });
+    const newId = insertResult.recordset[0].ProductoId;
+
+    if (imagen?.trim()) {
+      await pool.request()
+        .input('productoId', sql.Int, newId)
+        .input('urlImagen',  sql.NVarChar(500), imagen.trim())
+        .query(`
+          INSERT INTO ImagenesProducto (ProductoId, UrlImagen, EsPrincipal, Orden, Activo)
+          VALUES (@productoId, @urlImagen, 1, 1, 1)
+        `);
+    }
+
+    res.status(201).json({ success: true, data: { id: newId } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al crear producto', error: error instanceof Error ? error.message : 'Error desconocido' });
   }
@@ -104,10 +116,10 @@ export async function adminUpdateProduct(req: Request, res: Response): Promise<v
   const productoId = parseInt(req.params.id, 10);
   if (isNaN(productoId)) { res.status(400).json({ success: false, message: 'ID inválido' }); return; }
 
-  const { nombre, descripcion, precioBase, categoria, restauranteId, esDestacado, activo, calorias, tiempoPreparacion } = req.body as {
+  const { nombre, descripcion, precioBase, categoria, restauranteId, esDestacado, activo, calorias, tiempoPreparacion, imagen } = req.body as {
     nombre: string; descripcion?: string; precioBase: number; categoria: string;
     restauranteId: number; esDestacado?: boolean; activo?: boolean;
-    calorias?: number; tiempoPreparacion?: number;
+    calorias?: number; tiempoPreparacion?: number; imagen?: string;
   };
 
   try {
@@ -142,6 +154,28 @@ export async function adminUpdateProduct(req: Request, res: Response): Promise<v
             Activo = @activo, FechaActualizacion = SYSDATETIME()
         WHERE ProductoId = @productoId
       `);
+
+    if (imagen?.trim()) {
+      await pool.request()
+        .input('productoId', sql.Int, productoId)
+        .input('urlImagen',  sql.NVarChar(500), imagen.trim())
+        .query(`
+          IF EXISTS (
+            SELECT 1 FROM ImagenesProducto
+            WHERE ProductoId = @productoId AND EsPrincipal = 1 AND Activo = 1
+          )
+            BEGIN
+              UPDATE ImagenesProducto
+              SET UrlImagen = @urlImagen
+              WHERE ProductoId = @productoId AND EsPrincipal = 1 AND Activo = 1
+            END
+          ELSE
+            BEGIN
+              INSERT INTO ImagenesProducto (ProductoId, UrlImagen, EsPrincipal, Orden, Activo)
+              VALUES (@productoId, @urlImagen, 1, 1, 1)
+            END
+        `);
+    }
 
     res.json({ success: true, message: 'Producto actualizado' });
   } catch (error) {
